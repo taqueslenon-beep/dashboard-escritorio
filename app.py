@@ -52,7 +52,7 @@ st.markdown(f"""
 
     /* Fundo off-white geral */
     .stApp {{ background-color: {OFF_WHITE}; }}
-    .block-container {{ padding: 1.5rem 2.5rem; max-width: 100%; }}
+    .block-container {{ padding: 0.5rem 2.5rem 1.5rem 2.5rem; max-width: 100%; }}
     header[data-testid="stHeader"] {{ background: {OFF_WHITE}; }}
 
     /* Sidebar */
@@ -476,8 +476,6 @@ if pagina == "Dashboard":
 # PAGINA: CASOS
 # ══════════════════════════════════════════════════════════════
 elif pagina == "Casos":
-    st.markdown("## Casos")
-
     # ── Filtros (linha unica compacta) ──────────────────────
     f1, f2, f3, f4, f5, f6 = st.columns([2, 1.5, 1.5, 1, 1.5, 0.8])
     with f1:
