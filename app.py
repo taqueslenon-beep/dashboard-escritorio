@@ -123,79 +123,84 @@ st.markdown(f"""
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
 
     /* ── Filtros — area principal ────────────────────────── */
-    /* Container dos filtros */
-    .filtros-container {{
-        background: white;
-        border: 1px solid #e0ddd6;
-        border-radius: 10px;
-        padding: 20px 24px 16px 24px;
-        margin-bottom: 16px;
-    }}
-    .filtros-header {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }}
-    .filtros-titulo {{
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: {VERDE};
-    }}
-
-    /* Forcar multiselect claro na area principal (fora da sidebar) */
+    /* Multiselect — fundo branco, compacto */
     [data-testid="stAppViewContainer"] .stMultiSelect > div > div {{
-        background: #f8f7f5 !important;
+        background: white !important;
         border: 1px solid #d4d0c8 !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         color: #333 !important;
-        min-height: 38px !important;
+        min-height: 34px !important;
+        padding: 2px 6px !important;
     }}
     [data-testid="stAppViewContainer"] .stMultiSelect label {{
-        color: #555 !important;
-        font-size: 0.82rem !important;
-        font-weight: 500 !important;
-        text-transform: none !important;
-    }}
-    /* Tags dos filtros — azul claro com texto azul escuro */
-    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] {{
-        background: #e8f0fe !important;
-        color: #1a3a5c !important;
-        border-radius: 6px !important;
+        color: #777 !important;
         font-size: 0.75rem !important;
         font-weight: 500 !important;
-        border: 1px solid #c5d9f0 !important;
+        text-transform: none !important;
+        margin-bottom: 2px !important;
+    }}
+    /* Tags — verde suave */
+    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] {{
+        background: #e6eeea !important;
+        color: {VERDE} !important;
+        border-radius: 4px !important;
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        border: none !important;
+        padding: 2px 6px !important;
+        height: 22px !important;
+        line-height: 22px !important;
     }}
     [data-testid="stAppViewContainer"] span[data-baseweb="tag"] span {{
-        color: #1a3a5c !important;
+        color: {VERDE} !important;
     }}
     [data-testid="stAppViewContainer"] span[data-baseweb="tag"] svg {{
-        fill: #5b8db8 !important;
+        fill: {VERDE} !important;
+        width: 10px !important;
+        height: 10px !important;
     }}
-    /* Icones do multiselect */
     [data-testid="stAppViewContainer"] .stMultiSelect svg {{
-        fill: #999 !important;
+        fill: #bbb !important;
     }}
-    /* Dropdown do multiselect */
     [data-testid="stAppViewContainer"] .stMultiSelect [data-baseweb="popover"] {{
         background: white !important;
     }}
 
-    /* Text input na area principal */
+    /* Text input — compacto */
     [data-testid="stAppViewContainer"] .stTextInput input {{
-        background: #f8f7f5 !important;
+        background: white !important;
         border: 1px solid #d4d0c8 !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         color: #333 !important;
+        height: 34px !important;
+        padding: 4px 10px !important;
     }}
     [data-testid="stAppViewContainer"] .stTextInput label {{
-        color: #555 !important;
-        font-size: 0.82rem !important;
+        color: #777 !important;
+        font-size: 0.75rem !important;
         font-weight: 500 !important;
         text-transform: none !important;
+        margin-bottom: 2px !important;
     }}
     [data-testid="stAppViewContainer"] .stTextInput input::placeholder {{
-        color: #aaa !important;
+        color: #bbb !important;
+        font-size: 0.8rem !important;
+    }}
+
+    /* Botao limpar filtros */
+    [data-testid="stAppViewContainer"] .stButton > button {{
+        background: white !important;
+        color: #999 !important;
+        border: 1px solid #d4d0c8 !important;
+        border-radius: 6px !important;
+        font-size: 0.75rem !important;
+        height: 34px !important;
+        padding: 0 12px !important;
+    }}
+    [data-testid="stAppViewContainer"] .stButton > button:hover {{
+        background: #f5f3ef !important;
+        color: #666 !important;
+        border-color: #bbb !important;
     }}
 
     /* Divider */
@@ -342,43 +347,34 @@ if pagina == "Dashboard":
 elif pagina == "Casos":
     st.markdown("## Casos")
 
-    # ── Filtros (dentro de um container branco) ──────────────
-    st.markdown('<div class="filtros-container">', unsafe_allow_html=True)
-    st.markdown('<div class="filtros-header"><span class="filtros-titulo">Filtros</span></div>', unsafe_allow_html=True)
-
-    # Linha 1: Busca + Nucleo + Responsavel
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        busca = st.text_input("Buscar", placeholder="Nome ou cliente...", label_visibility="visible")
-    with col2:
+    # ── Filtros (linha unica compacta) ──────────────────────
+    f1, f2, f3, f4, f5, f6 = st.columns([2, 1.5, 1.5, 1, 1.5, 0.8])
+    with f1:
+        busca = st.text_input("Buscar", placeholder="Nome ou cliente...")
+    with f2:
         nucleo = st.multiselect(
             "N\u00facleo", sorted(df["nucleo"].dropna().unique()),
             default=sorted(df["nucleo"].dropna().unique())
         )
-    with col3:
+    with f3:
         responsavel = st.multiselect(
             "Respons\u00e1vel", sorted(df["responsavel"].dropna().unique()),
             default=sorted(df["responsavel"].dropna().unique())
         )
-
-    # Linha 2: Prioridade + Status + Botao limpar
-    col4, col5, col6 = st.columns([2, 2, 1])
-    with col4:
+    with f4:
         prioridade = st.multiselect(
             "Prioridade", sorted(df["prioridade"].dropna().unique()),
             default=sorted(df["prioridade"].dropna().unique())
         )
-    with col5:
+    with f5:
         status_filtro = st.multiselect(
             "Status", sorted(df["status"].unique()),
             default=sorted(df["status"].unique())
         )
-    with col6:
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Limpar filtros", use_container_width=True):
+    with f6:
+        st.markdown('<p style="font-size:0.75rem;color:transparent;margin-bottom:2px;">_</p>', unsafe_allow_html=True)
+        if st.button("Limpar", use_container_width=True):
             st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Aplicar filtros
     mask = (
