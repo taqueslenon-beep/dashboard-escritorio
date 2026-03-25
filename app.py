@@ -401,6 +401,32 @@ def salvar_status(caso_id, novo_status):
     value = None if novo_status == "SEM STATUS" else novo_status
     supabase.table("casos").update({"status": value}).eq("id", caso_id).execute()
 
+# ── Modal de edicao de status ──────────────────────────────────
+@st.dialog("Editar Status")
+def modal_editar_status(caso_id, nome_caso, status_atual):
+    st.markdown(f"**{nome_caso}**")
+    estilo = CORES_STATUS.get(status_atual, {"bg": "#f0f0f0", "cor": "#666"})
+    st.markdown(
+        f'<span style="background:{estilo["bg"]};color:{estilo["cor"]};'
+        f'padding:5px 14px;border-radius:12px;font-weight:600;font-size:0.85rem;">'
+        f'{status_atual}</span>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
+    idx = STATUS_OPTIONS.index(status_atual) if status_atual in STATUS_OPTIONS else 0
+    novo = st.selectbox("Novo status", STATUS_OPTIONS, index=idx)
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Salvar", type="primary", use_container_width=True):
+            salvar_status(caso_id, novo)
+            st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = novo
+            st.toast(f"Status atualizado: {novo}")
+            st.rerun()
+    with col2:
+        if st.button("Cancelar", use_container_width=True):
+            st.rerun()
+
 # ── Sidebar ──────────────────────────────────────────────────
 with st.sidebar:
     pagina = option_menu(
@@ -552,97 +578,133 @@ elif pagina == "Casos":
 
     st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
-    # ── Controles: cliente + editar status ─────────────────
-    ctrl1, ctrl2 = st.columns([1, 3])
-    with ctrl1:
-        mostrar_cliente = st.checkbox("Mostrar coluna Cliente", value=False)
-    with ctrl2:
-        with st.expander("✏️ Editar status de um caso"):
-            opcoes_casos = {
-                f"{row['nome_do_caso']} ({row['status']})": int(row["id"])
-                for _, row in dados.iterrows()
-            }
-            caso_selecionado = st.selectbox("Caso", list(opcoes_casos.keys()), key="edit_caso")
-            if caso_selecionado:
-                caso_id_edit = opcoes_casos[caso_selecionado]
-                status_atual_edit = dados.loc[dados["id"] == caso_id_edit, "status"].values[0]
-                idx_edit = STATUS_OPTIONS.index(status_atual_edit) if status_atual_edit in STATUS_OPTIONS else 0
-                novo_status_edit = st.selectbox("Novo status", STATUS_OPTIONS, index=idx_edit, key="edit_status")
-                if st.button("Salvar", key="btn_salvar_status"):
-                    salvar_status(caso_id_edit, novo_status_edit)
-                    st.session_state.dados.loc[st.session_state.dados["id"] == caso_id_edit, "status"] = novo_status_edit
-                    st.toast(f"Status atualizado: {novo_status_edit}")
-                    st.rerun()
+    # ── Toggle coluna cliente ──────────────────────────────
+    mostrar_cliente = st.checkbox("Mostrar coluna Cliente", value=False)
+
+    # ── Paginacao ──────────────────────────────────────────
+    LINHAS_POR_PAGINA = 25
+    total_paginas = max(1, -(-len(dados) // LINHAS_POR_PAGINA))
+    if "pagina_tabela" not in st.session_state:
+        st.session_state.pagina_tabela = 0
+    if st.session_state.pagina_tabela >= total_paginas:
+        st.session_state.pagina_tabela = 0
+    pag = st.session_state.pagina_tabela
+    pagina_dados = dados.iloc[pag * LINHAS_POR_PAGINA : (pag + 1) * LINHAS_POR_PAGINA]
 
     # ── Funcoes de estilo (pandas Styler) ──────────────────
     def estilo_celula(val, mapa):
         c = mapa.get(str(val), {"bg": "#f0f0f0", "cor": "#666"})
         return f'background-color: {c["bg"]}; color: {c["cor"]}; font-weight: 600; text-align: center;'
 
-    def estilo_caso(val):
-        return "font-weight: 700; color: #1a1a1a;"
-
-    def estilo_cliente(val):
-        return "color: #555; font-size: 0.82em;"
-
-    # ── Montar DataFrame para exibicao ─────────────────────
-    colunas = ["nome_do_caso", "nucleo", "responsavel", "prioridade", "status"]
+    # ── Montar DataFrame da pagina (sem coluna status) ─────
+    colunas = ["nome_do_caso", "nucleo", "responsavel", "prioridade"]
     renomear = {
         "nome_do_caso": "CASO", "nucleo": "NÚCLEO",
-        "responsavel": "RESPONSÁVEL", "prioridade": "PRIORIDADE", "status": "STATUS",
+        "responsavel": "RESPONSÁVEL", "prioridade": "PRIORIDADE",
     }
     if mostrar_cliente:
         colunas = ["cliente"] + colunas
         renomear["cliente"] = "CLIENTE"
 
-    df_exibir = dados[colunas].rename(columns=renomear).reset_index(drop=True)
+    df_exibir = pagina_dados[colunas].rename(columns=renomear).reset_index(drop=True)
 
-    # ── Aplicar estilos ────────────────────────────────────
-    styler = df_exibir.style
-
-    styler = styler.map(estilo_caso, subset=["CASO"])
-    styler = styler.map(lambda v: estilo_celula(v, CORES_NUCLEO), subset=["NÚCLEO"])
-    styler = styler.map(lambda v: estilo_celula(v, CORES_RESPONSAVEL), subset=["RESPONSÁVEL"])
-    styler = styler.map(lambda v: estilo_celula(v, CORES_PRIORIDADE), subset=["PRIORIDADE"])
-    styler = styler.map(lambda v: estilo_celula(v, CORES_STATUS), subset=["STATUS"])
-    if mostrar_cliente:
-        styler = styler.map(estilo_cliente, subset=["CLIENTE"])
-
-    styler = styler.set_table_styles([
-        # Tabela geral
-        {"selector": "table", "props": [
-            ("width", "100%"), ("border-collapse", "collapse"),
-            ("font-family", "'Inter', sans-serif"), ("font-size", "0.84rem"),
-            ("border", "1px solid #e0ddd6"), ("border-radius", "10px"),
-        ]},
-        # Cabecalho
-        {"selector": "thead th", "props": [
-            ("background-color", VERDE), ("color", "white"),
-            ("font-weight", "600"), ("font-size", "0.73rem"),
-            ("text-transform", "uppercase"), ("letter-spacing", "0.5px"),
-            ("padding", "11px 14px"), ("text-align", "left"),
-            ("border-bottom", "none"), ("white-space", "nowrap"),
-        ]},
-        # Primeira celula do cabecalho: cantos arredondados
-        {"selector": "thead th:first-child", "props": [("border-radius", "10px 0 0 0")]},
-        {"selector": "thead th:last-child",  "props": [("border-radius", "0 10px 0 0")]},
-        # Celulas do corpo
-        {"selector": "tbody td", "props": [
-            ("padding", "8px 14px"), ("border-bottom", "1px solid #eae6df"),
-            ("vertical-align", "middle"),
-        ]},
-        # Hover
-        {"selector": "tbody tr:hover td", "props": [("background-color", "#faf8f5 !important")]},
-    ]).hide(axis="index")
-
-    # ── Renderizar tabela ──────────────────────────────────
-    html_tabela = styler.to_html()
-    st.markdown(
-        f'<div style="overflow-x:auto;border-radius:10px;">{html_tabela}</div>',
-        unsafe_allow_html=True,
+    # ── Estilos da tabela ──────────────────────────────────
+    styler = (
+        df_exibir.style
+        .map(lambda v: "font-weight: 700; color: #1a1a1a;", subset=["CASO"])
+        .map(lambda v: estilo_celula(v, CORES_NUCLEO), subset=["NÚCLEO"])
+        .map(lambda v: estilo_celula(v, CORES_RESPONSAVEL), subset=["RESPONSÁVEL"])
+        .map(lambda v: estilo_celula(v, CORES_PRIORIDADE), subset=["PRIORIDADE"])
+        .set_table_styles([
+            {"selector": "table", "props": [
+                ("width", "100%"), ("border-collapse", "collapse"),
+                ("font-family", "'Inter', sans-serif"), ("font-size", "0.84rem"),
+            ]},
+            {"selector": "thead th", "props": [
+                ("background-color", VERDE), ("color", "white"),
+                ("font-weight", "600"), ("font-size", "0.73rem"),
+                ("text-transform", "uppercase"), ("letter-spacing", "0.5px"),
+                ("padding", "11px 14px"), ("text-align", "left"),
+                ("border-bottom", "none"), ("white-space", "nowrap"),
+            ]},
+            {"selector": "thead th:first-child", "props": [("border-radius", "10px 0 0 0")]},
+            {"selector": "thead th:last-child",  "props": [("border-radius", "0 10px 0 0")]},
+            {"selector": "tbody td", "props": [
+                ("padding", "9px 14px"), ("border-bottom", "1px solid #eae6df"),
+                ("vertical-align", "middle"),
+            ]},
+            {"selector": "tbody tr:hover td", "props": [("background-color", "#faf8f5 !important")]},
+        ])
+        .hide(axis="index")
     )
+    if mostrar_cliente:
+        styler = styler.map(lambda v: "color: #555; font-size: 0.82em;", subset=["CLIENTE"])
 
-    # ── Rodape: exportar CSV ───────────────────────────────
+    # ── Layout: tabela (esq) + coluna status/botoes (dir) ──
+    col_tab, col_status = st.columns([0.84, 0.16])
+
+    with col_tab:
+        html_tabela = styler.to_html()
+        st.markdown(
+            f'<div style="overflow-x:auto;border:1px solid #e0ddd6;border-radius:10px 0 0 10px;">'
+            f'{html_tabela}</div>',
+            unsafe_allow_html=True,
+        )
+
+    with col_status:
+        # Cabecalho da coluna Status (alinhado com o thead da tabela)
+        st.markdown(
+            f'<div style="background:{VERDE};color:white;font-weight:600;font-size:0.73rem;'
+            f'text-transform:uppercase;letter-spacing:0.5px;padding:11px 10px;'
+            f'border-radius:0 10px 0 0;white-space:nowrap;border-bottom:none;">STATUS</div>',
+            unsafe_allow_html=True,
+        )
+        # Botao por linha
+        for _, row in pagina_dados.iterrows():
+            caso_id   = int(row["id"])
+            status    = row["status"]
+            cor       = CORES_STATUS.get(status, {"bg": "#f0f0f0", "cor": "#666"})
+            # CSS escopado por caso_id para colorir o botao
+            st.markdown(f"""
+            <style>
+            div[data-testid="stButton"].btn-status-{caso_id} > button {{
+                background-color: {cor['bg']} !important;
+                color: {cor['cor']} !important;
+                border: none !important;
+                font-weight: 600 !important;
+                font-size: 0.72rem !important;
+                border-radius: 10px !important;
+                padding: 4px 6px !important;
+                height: 38px !important;
+                width: 100% !important;
+                margin: 1px 0 !important;
+            }}
+            </style>
+            <div class="btn-status-{caso_id}" data-testid="stButton">
+            """, unsafe_allow_html=True)
+            if st.button(status, key=f"btn_{caso_id}", use_container_width=True):
+                modal_editar_status(caso_id, row["nome_do_caso"], status)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── Navegacao de paginas ───────────────────────────────
+    if total_paginas > 1:
+        nav1, nav2, nav3 = st.columns([1, 2, 1])
+        with nav1:
+            if st.button("‹ Anterior", disabled=(pag == 0), use_container_width=True):
+                st.session_state.pagina_tabela -= 1
+                st.rerun()
+        with nav2:
+            st.markdown(
+                f'<p style="text-align:center;color:#777;font-size:0.83rem;padding-top:6px;">'
+                f'Página {pag + 1} de {total_paginas} — {len(dados)} casos</p>',
+                unsafe_allow_html=True,
+            )
+        with nav3:
+            if st.button("Próximo ›", disabled=(pag >= total_paginas - 1), use_container_width=True):
+                st.session_state.pagina_tabela += 1
+                st.rerun()
+
+    # ── Exportar CSV ───────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
     csv = dados.to_csv(index=False).encode("utf-8")
-    st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
+    st.download_button("⬇ Exportar CSV", csv, "casos.csv", "text/csv")
