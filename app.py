@@ -47,6 +47,24 @@ st.markdown(f"""
     [data-testid="stSidebar"] .stMarkdown h3,
     [data-testid="stSidebar"] .stMarkdown h4 {{ color: white; }}
 
+    /* Sidebar option-menu — forcar fundo transparente */
+    [data-testid="stSidebar"] iframe {{
+        background-color: transparent !important;
+    }}
+    [data-testid="stSidebar"] .nav-link {{
+        color: rgba(255,255,255,0.75) !important;
+        background-color: transparent !important;
+    }}
+    [data-testid="stSidebar"] .nav-link.active,
+    [data-testid="stSidebar"] .nav-link-selected {{
+        color: white !important;
+        background-color: rgba(255,255,255,0.15) !important;
+    }}
+    [data-testid="stSidebar"] .nav-link:hover {{
+        color: white !important;
+        background-color: rgba(255,255,255,0.1) !important;
+    }}
+
     /* Sidebar inputs */
     [data-testid="stSidebar"] .stTextInput input,
     [data-testid="stSidebar"] .stMultiSelect > div > div {{
@@ -127,12 +145,13 @@ with st.sidebar:
         icons=["bar-chart-fill", "folder2-open"],
         default_index=0,
         styles={
-            "container": {"padding": "8px 0 0 0", "background-color": "transparent"},
+            "container": {"padding": "8px 0 0 0", "background-color": VERDE},
+            "menu-title": {"display": "none"},
             "icon": {"color": "#a8c4b8", "font-size": "18px"},
             "nav-link": {
                 "font-size": "15px", "text-align": "left", "margin": "2px 0",
                 "color": "rgba(255,255,255,0.75)", "border-radius": "8px",
-                "padding": "10px 14px",
+                "padding": "10px 14px", "background-color": "transparent",
             },
             "nav-link-selected": {
                 "background-color": "rgba(255,255,255,0.15)",
