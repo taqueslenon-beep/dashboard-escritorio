@@ -165,8 +165,10 @@ st.markdown(f"""
     }}
     [data-testid="stAppViewContainer"] .stMultiSelect label,
     [data-testid="stAppViewContainer"] .stTextInput label {{
-        font-size: 0.68rem !important;
-        margin-bottom: 1px !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        color: #555 !important;
+        margin-bottom: 2px !important;
     }}
 
     /* ── Tags coloridas por conteudo (Nucleo) ────────── */
