@@ -96,6 +96,12 @@ st.markdown(f"""
 
     /* Dataframe */
     .stDataFrame {{ border-radius: 10px; border: 1px solid #e0ddd6; }}
+    /* Negrito e quebra de texto na coluna Caso (segunda coluna de dados) */
+    .stDataFrame [data-testid="stDataFrameResizable"] td[class*="col1"] {{
+        font-weight: 700 !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+    }}
 
     /* Selectbox */
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
@@ -292,15 +298,24 @@ elif pagina == "Casos":
     tab_tabela, tab_status = st.tabs(["Tabela", "Editar Status"])
 
     with tab_tabela:
+        tabela_dados = dados[["cliente", "nome_do_caso", "nucleo", "responsavel", "prioridade", "status"]].rename(
+            columns={"cliente": "Cliente", "nome_do_caso": "Caso",
+                     "nucleo": "Nucleo", "responsavel": "Responsavel",
+                     "prioridade": "Prioridade", "status": "Status"}
+        )
         st.dataframe(
-            dados[["id", "cliente", "nome_do_caso", "nucleo", "responsavel", "prioridade", "status", "grupo"]].rename(
-                columns={"id": "ID", "cliente": "Cliente", "nome_do_caso": "Caso",
-                         "nucleo": "Nucleo", "responsavel": "Resp.", "prioridade": "Prio",
-                         "status": "Status", "grupo": "Grupo"}
-            ),
+            tabela_dados,
             use_container_width=True,
             height=600,
-            hide_index=True
+            hide_index=True,
+            column_config={
+                "Caso": st.column_config.TextColumn("Caso", width="large"),
+                "Cliente": st.column_config.TextColumn("Cliente", width="medium"),
+                "Nucleo": st.column_config.TextColumn("Nucleo", width="small"),
+                "Responsavel": st.column_config.TextColumn("Responsavel", width="small"),
+                "Prioridade": st.column_config.TextColumn("Prioridade", width="small"),
+                "Status": st.column_config.TextColumn("Status", width="medium"),
+            }
         )
 
         csv = dados.to_csv(index=False).encode("utf-8")
