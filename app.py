@@ -123,22 +123,23 @@ st.markdown(f"""
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
 
     /* Filtros na area principal — expander */
-    .main .stExpander {{
-        background: white;
-        border: 1px solid #e0ddd6;
-        border-radius: 10px;
+    [data-testid="stExpander"] {{
+        background: white !important;
+        border: 1px solid #e0ddd6 !important;
+        border-radius: 10px !important;
         margin-bottom: 1rem;
     }}
-    .main .stExpander summary {{
+    [data-testid="stExpander"] summary p {{
         color: {VERDE} !important;
-        font-weight: 600;
+        font-weight: 600 !important;
     }}
-    .main .stExpander summary svg {{
+    [data-testid="stExpander"] summary svg {{
         fill: {VERDE} !important;
+        color: {VERDE} !important;
     }}
 
-    /* Filtros — labels */
-    .main .stExpander label {{
+    /* Filtros — labels na area principal (nao sidebar) */
+    [data-testid="stExpander"] label {{
         color: #64748b !important;
         font-size: 0.78rem !important;
         text-transform: uppercase;
@@ -147,31 +148,37 @@ st.markdown(f"""
     }}
 
     /* Filtros — multiselect na area principal */
-    .main .stMultiSelect > div > div {{
+    [data-testid="stExpander"] [data-testid="stMultiSelect"] > div > div {{
         background: white !important;
         border: 1px solid #d4d0c8 !important;
         border-radius: 8px !important;
         color: #333 !important;
     }}
-    .main .stMultiSelect span[data-baseweb="tag"] {{
+    [data-testid="stExpander"] span[data-baseweb="tag"] {{
         background: {VERDE} !important;
         color: white !important;
         border-radius: 6px !important;
         font-size: 0.75rem !important;
     }}
-    .main .stMultiSelect span[data-baseweb="tag"] svg {{
+    [data-testid="stExpander"] span[data-baseweb="tag"] span {{
+        color: white !important;
+    }}
+    [data-testid="stExpander"] span[data-baseweb="tag"] svg {{
         fill: rgba(255,255,255,0.7) !important;
     }}
-    .main .stMultiSelect svg {{
+    [data-testid="stExpander"] [data-testid="stMultiSelect"] svg {{
         fill: #999 !important;
     }}
 
     /* Filtros — text input na area principal */
-    .main .stTextInput input {{
+    [data-testid="stExpander"] input {{
         background: white !important;
         border: 1px solid #d4d0c8 !important;
         border-radius: 8px !important;
         color: #333 !important;
+    }}
+    [data-testid="stExpander"] input::placeholder {{
+        color: #aaa !important;
     }}
 
     /* Divider */
