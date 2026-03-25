@@ -35,6 +35,11 @@ CORES_RESPONSAVEL = {
     "LENON": {"bg": "#f0e0d0", "cor": "#6d4c2e"},
     "GILBERTO": {"bg": "#fef3c7", "cor": "#b45309"},
 }
+CORES_NUCLEO = {
+    "AMBIENTAL": {"bg": "#223631", "cor": "#ffffff"},
+    "COBRANÇAS": {"bg": "#1a3a5c", "cor": "#ffffff"},
+    "GENERALISTA": {"bg": "#5b9bd5", "cor": "#ffffff"},
+}
 
 st.set_page_config(page_title="Escritorio", page_icon="\u2696\ufe0f", layout="wide")
 
@@ -318,13 +323,20 @@ elif pagina == "Casos":
                 f'font-weight:600;white-space:nowrap;">{texto}</span>'
             )
 
+        def celula_preenchida(texto, cores_mapa):
+            estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
+            return (
+                f'<td style="background:{estilo["bg"]};color:{estilo["cor"]};'
+                f'font-weight:600;font-size:0.82rem;text-align:center;">{texto}</td>'
+            )
+
         # ── Montar tabela HTML ───────────────────────────────
         linhas_html = ""
         for _, row in dados.iterrows():
             linhas_html += f"""<tr>
                 <td>{row['cliente']}</td>
                 <td style="font-weight:700;">{row['nome_do_caso']}</td>
-                <td>{row['nucleo']}</td>
+                {celula_preenchida(row['nucleo'], CORES_NUCLEO)}
                 <td>{badge_html(row['responsavel'], CORES_RESPONSAVEL)}</td>
                 <td>{badge_html(row['prioridade'], CORES_PRIORIDADE)}</td>
                 <td>{badge_html(row['status'], CORES_STATUS)}</td>
