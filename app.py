@@ -583,80 +583,103 @@ elif pagina == "Casos":
     fim = min(inicio + LINHAS_POR_PAGINA, len(dados))
     pagina_dados = dados.iloc[inicio:fim]
 
-    # ── Cabecalho da tabela ────────────────────────────────
-    st.markdown(f"""
-    <div style="background:{VERDE};border-radius:10px 10px 0 0;padding:0;">
-        <div style="display:grid;grid-template-columns:2fr 3fr 1.2fr 1.2fr 0.8fr 1.5fr;gap:0;">
-            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</div>
-            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</div>
-            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</div>
-            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</div>
-            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prior.</div>
-            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # ── Toggle coluna cliente ──────────────────────────────
+    mostrar_cliente = st.checkbox("Mostrar coluna Cliente", value=False)
 
-    # ── CSS para esconder label dos selectbox de status ────
+    # ── CSS compacto para linhas da tabela ─────────────────
     st.markdown("""
     <style>
-        .status-select label { display: none !important; }
-        .status-select .stSelectbox > div > div {
-            min-height: 30px !important;
+        /* Compactar linhas da tabela de casos */
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
+            gap: 6px !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            min-height: 36px !important;
+            align-items: center !important;
+        }
+        /* Remover espaco extra dos elementos dentro das colunas */
+        .tabela-casos div[data-testid="stMarkdownContainer"] p,
+        .tabela-casos div[data-testid="stMarkdownContainer"] div {
+            margin-bottom: 0 !important;
+            line-height: 1.2 !important;
+        }
+        /* Selectbox compacto dentro da tabela */
+        .tabela-casos .stSelectbox {
+            margin-bottom: 0 !important;
+        }
+        .tabela-casos .stSelectbox > div > div {
+            min-height: 28px !important;
             padding: 0 8px !important;
             font-size: 0.78rem !important;
             font-weight: 600 !important;
-            border-radius: 12px !important;
-            border: none !important;
         }
-        .status-select [data-baseweb="select"] > div {
-            border: none !important;
-            background: transparent !important;
-        }
-        .linha-caso {
-            border-bottom: 1px solid #eae6df;
-            padding: 4px 0;
-            min-height: 48px;
-            align-items: center;
+        .tabela-casos .stSelectbox label {
+            display: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
 
+    # ── Cabecalho da tabela ────────────────────────────────
+    if mostrar_cliente:
+        grid_cols = "2fr 3fr 1.2fr 1.2fr 0.8fr 1.5fr"
+        cabecalhos = ["Cliente", "Caso", "Nucleo", "Responsavel", "Prior.", "Status"]
+        col_ratios = [2, 3, 1.2, 1.2, 0.8, 1.5]
+    else:
+        grid_cols = "3fr 1.2fr 1.2fr 0.8fr 1.5fr"
+        cabecalhos = ["Caso", "Nucleo", "Responsavel", "Prior.", "Status"]
+        col_ratios = [3, 1.2, 1.2, 0.8, 1.5]
+
+    cabecalho_divs = "".join(
+        f'<div style="padding:10px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">{c}</div>'
+        for c in cabecalhos
+    )
+    st.markdown(f"""
+    <div style="background:{VERDE};border-radius:10px 10px 0 0;">
+        <div style="display:grid;grid-template-columns:{grid_cols};gap:0;">
+            {cabecalho_divs}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # ── Linhas da tabela ───────────────────────────────────
+    st.markdown('<div class="tabela-casos">', unsafe_allow_html=True)
     for _, row in pagina_dados.iterrows():
         caso_id = int(row["id"])
-        cols = st.columns([2, 3, 1.2, 1.2, 0.8, 1.5])
+        cols = st.columns(col_ratios)
+        idx_col = 0
 
-        with cols[0]:
-            st.markdown(f'<div style="padding:8px 6px;font-size:0.85rem;color:#333;">{row["cliente"]}</div>', unsafe_allow_html=True)
-        with cols[1]:
-            st.markdown(f'<div style="padding:8px 6px;font-size:0.85rem;color:#333;font-weight:700;">{row["nome_do_caso"]}</div>', unsafe_allow_html=True)
-        with cols[2]:
+        if mostrar_cliente:
+            with cols[idx_col]:
+                st.markdown(f'<div style="font-size:0.82rem;color:#555;padding:4px 2px;">{row["cliente"]}</div>', unsafe_allow_html=True)
+            idx_col += 1
+
+        with cols[idx_col]:
+            st.markdown(f'<div style="font-size:0.83rem;color:#222;font-weight:700;padding:4px 2px;">{row["nome_do_caso"]}</div>', unsafe_allow_html=True)
+        with cols[idx_col + 1]:
             st.markdown(celula_preenchida_html(row["nucleo"], CORES_NUCLEO), unsafe_allow_html=True)
-        with cols[3]:
+        with cols[idx_col + 2]:
             st.markdown(badge_html(row["responsavel"], CORES_RESPONSAVEL), unsafe_allow_html=True)
-        with cols[4]:
+        with cols[idx_col + 3]:
             st.markdown(badge_html(row["prioridade"], CORES_PRIORIDADE), unsafe_allow_html=True)
-        with cols[5]:
+        with cols[idx_col + 4]:
             status_atual = row["status"]
             idx_status = STATUS_OPTIONS.index(status_atual) if status_atual in STATUS_OPTIONS else 0
-            with st.container():
-                st.markdown('<div class="status-select">', unsafe_allow_html=True)
-                novo = st.selectbox(
-                    f"status_{caso_id}",
-                    STATUS_OPTIONS,
-                    index=idx_status,
-                    key=f"sel_status_{caso_id}",
-                    label_visibility="collapsed",
-                )
-                st.markdown('</div>', unsafe_allow_html=True)
-                if novo != status_atual:
-                    salvar_status(caso_id, novo)
-                    st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = novo
-                    st.toast(f"Status atualizado: {novo}")
-                    st.rerun()
+            novo = st.selectbox(
+                f"s_{caso_id}",
+                STATUS_OPTIONS,
+                index=idx_status,
+                key=f"sel_{caso_id}",
+                label_visibility="collapsed",
+            )
+            if novo != status_atual:
+                salvar_status(caso_id, novo)
+                st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = novo
+                st.toast(f"Status atualizado: {novo}")
+                st.rerun()
 
         st.markdown('<hr style="margin:0;border:none;border-top:1px solid #eae6df;">', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Navegacao entre paginas ────────────────────────────
     if total_paginas > 1:
