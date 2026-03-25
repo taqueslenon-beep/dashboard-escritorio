@@ -123,14 +123,16 @@ st.markdown(f"""
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
 
     /* ── Filtros — area principal ────────────────────────── */
-    /* Multiselect — fundo branco, compacto */
-    [data-testid="stAppViewContainer"] .stMultiSelect > div > div {{
-        background: white !important;
+    /* Multiselect — fundo transparente */
+    [data-testid="stAppViewContainer"] .stMultiSelect > div > div,
+    [data-testid="stAppViewContainer"] .stMultiSelect [data-baseweb="select"] > div,
+    [data-testid="stAppViewContainer"] [data-baseweb="select"],
+    [data-testid="stAppViewContainer"] [data-baseweb="input"] {{
+        background: transparent !important;
+        background-color: transparent !important;
         border: 1px solid #d4d0c8 !important;
         border-radius: 6px !important;
         color: #333 !important;
-        min-height: 34px !important;
-        padding: 2px 6px !important;
     }}
     [data-testid="stAppViewContainer"] .stMultiSelect label {{
         color: #777 !important;
@@ -139,31 +141,160 @@ st.markdown(f"""
         text-transform: none !important;
         margin-bottom: 2px !important;
     }}
-    /* Tags — verde suave */
+    /* Tags — estilo base compacto */
     [data-testid="stAppViewContainer"] span[data-baseweb="tag"] {{
-        background: #e6eeea !important;
-        color: {VERDE} !important;
         border-radius: 4px !important;
         font-size: 0.7rem !important;
         font-weight: 600 !important;
         border: none !important;
-        padding: 2px 6px !important;
+        padding: 2px 8px !important;
         height: 22px !important;
         line-height: 22px !important;
     }}
-    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] span {{
-        color: {VERDE} !important;
+
+    /* ── Tags coloridas por conteudo (Nucleo) ────────── */
+    span[data-baseweb="tag"][aria-label*="AMBIENTAL"] {{
+        background: #223631 !important;
     }}
-    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] svg {{
-        fill: {VERDE} !important;
-        width: 10px !important;
-        height: 10px !important;
+    span[data-baseweb="tag"][aria-label*="AMBIENTAL"] span {{
+        color: white !important;
     }}
+    span[data-baseweb="tag"][aria-label*="AMBIENTAL"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="COBRAN"] {{
+        background: #1a3a5c !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="COBRAN"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="COBRAN"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="GENERALISTA"] {{
+        background: #5b9bd5 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="GENERALISTA"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="GENERALISTA"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+
+    /* ── Tags coloridas (Responsavel) ────────────────── */
+    span[data-baseweb="tag"][aria-label*="LENON"] {{
+        background: #6d4c2e !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="LENON"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="LENON"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="GILBERTO"] {{
+        background: #d4a017 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="GILBERTO"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="GILBERTO"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+
+    /* ── Tags coloridas (Prioridade) ─────────────────── */
+    span[data-baseweb="tag"][aria-label*="P1"] {{
+        background: #c0392b !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P1"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P1"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P2"] {{
+        background: #b7950b !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P2"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P2"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P3"] {{
+        background: #2b6cb0 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P3"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P3"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P4"] {{
+        background: #888888 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P4"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="P4"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+
+    /* ── Tags coloridas (Status) ─────────────────────── */
+    span[data-baseweb="tag"][aria-label*="SEM STATUS"] {{
+        background: #999999 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="SEM STATUS"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="SEM STATUS"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="EM ANDAMENTO"] {{
+        background: #b7950b !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="EM ANDAMENTO"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="EM ANDAMENTO"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="CONCLUIDO"] {{
+        background: #2d5a1e !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="CONCLUIDO"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="CONCLUIDO"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="SUBSTABELECIDO"] {{
+        background: #4caf50 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="SUBSTABELECIDO"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="SUBSTABELECIDO"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="EM MONITOR"] {{
+        background: #e65100 !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="EM MONITOR"] span {{
+        color: white !important;
+    }}
+    span[data-baseweb="tag"][aria-label*="EM MONITOR"] svg {{
+        fill: rgba(255,255,255,0.8) !important;
+    }}
+
+    /* Dropdown popover e icones */
     [data-testid="stAppViewContainer"] .stMultiSelect svg {{
-        fill: #bbb !important;
+        fill: #999 !important;
     }}
-    [data-testid="stAppViewContainer"] .stMultiSelect [data-baseweb="popover"] {{
+    [data-testid="stAppViewContainer"] [data-baseweb="popover"],
+    [data-testid="stAppViewContainer"] [data-baseweb="popover"] ul,
+    [data-testid="stAppViewContainer"] [data-baseweb="menu"] {{
         background: white !important;
+        background-color: white !important;
     }}
 
     /* Text input — compacto */
