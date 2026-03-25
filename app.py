@@ -14,7 +14,7 @@ OFF_WHITE = "#f5f3ef"
 CREME = "#eae6df"
 
 STATUS_OPTIONS = [
-    "EM ANDAMENTO", "CONCLUIDO", "SUBSTABELECIDO", "EM MONITORAMENTO"
+    "SEM STATUS", "EM ANDAMENTO", "CONCLUIDO", "SUBSTABELECIDO", "EM MONITORAMENTO"
 ]
 
 # ── Cores dos badges ─────────────────────────────────────────
@@ -25,14 +25,15 @@ CORES_PRIORIDADE = {
     "P4": {"bg": "#f0f0f0", "cor": "#666666"},
 }
 CORES_STATUS = {
+    "SEM STATUS": {"bg": "#f0f0f0", "cor": "#999999"},
     "EM ANDAMENTO": {"bg": "#fef9e7", "cor": "#b7950b"},
     "CONCLUIDO": {"bg": "#e0edda", "cor": "#2d5a1e"},
     "SUBSTABELECIDO": {"bg": "#e8f5e9", "cor": "#4caf50"},
     "EM MONITORAMENTO": {"bg": "#fff3e0", "cor": "#e65100"},
 }
 CORES_RESPONSAVEL = {
-    "LENON": {"bg": "#e0e0e0", "cor": "#333333"},
-    "GILBERTO": {"bg": "#f0f0f0", "cor": "#888888"},
+    "LENON": {"bg": "#f0e0d0", "cor": "#6d4c2e"},
+    "GILBERTO": {"bg": "#fef3c7", "cor": "#b45309"},
 }
 
 st.set_page_config(page_title="Escritorio", page_icon="\u2696\ufe0f", layout="wide")
@@ -333,13 +334,13 @@ elif pagina == "Casos":
         <div style="max-height:600px;overflow-y:auto;border:1px solid #e0ddd6;border-radius:10px;">
         <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:0.85rem;">
             <thead>
-                <tr style="background:{CREME};position:sticky;top:0;z-index:1;">
-                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prioridade</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+                <tr style="background:{VERDE};position:sticky;top:0;z-index:1;">
+                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prioridade</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
                 </tr>
             </thead>
             <tbody>
