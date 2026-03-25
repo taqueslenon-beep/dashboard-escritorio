@@ -554,7 +554,7 @@ elif pagina == "Casos":
     with f5:
         status_filtro = st.multiselect(
             "Status", sorted(df["status"].unique()),
-            default=sorted(df["status"].unique())
+            default=["EM ANDAMENTO", "EM MONITORAMENTO"]
         )
     with f6:
         st.markdown('<p style="font-size:0.75rem;color:transparent;margin-bottom:2px;">_</p>', unsafe_allow_html=True)
