@@ -37,7 +37,7 @@ CORES_RESPONSAVEL = {
 }
 CORES_NUCLEO = {
     "AMBIENTAL": {"bg": "#223631", "cor": "#ffffff"},
-    "COBRANÇAS": {"bg": "#1a3a5c", "cor": "#ffffff"},
+    "COBRAN\u00c7AS": {"bg": "#1a3a5c", "cor": "#ffffff"},
     "GENERALISTA": {"bg": "#5b9bd5", "cor": "#ffffff"},
 }
 
@@ -69,7 +69,7 @@ st.markdown(f"""
     [data-testid="stSidebar"] .stMarkdown h3,
     [data-testid="stSidebar"] .stMarkdown h4 {{ color: white; }}
 
-    /* Sidebar option-menu — forcar fundo transparente */
+    /* Sidebar option-menu */
     [data-testid="stSidebar"] iframe {{
         background-color: transparent !important;
     }}
@@ -122,62 +122,79 @@ st.markdown(f"""
     /* Selectbox */
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
 
-    /* Filtros na area principal — expander */
-    [data-testid="stExpander"] {{
-        background: white !important;
-        border: 1px solid #e0ddd6 !important;
-        border-radius: 10px !important;
-        margin-bottom: 1rem;
+    /* ── Filtros — area principal ────────────────────────── */
+    /* Container dos filtros */
+    .filtros-container {{
+        background: white;
+        border: 1px solid #e0ddd6;
+        border-radius: 10px;
+        padding: 20px 24px 16px 24px;
+        margin-bottom: 16px;
     }}
-    [data-testid="stExpander"] summary p {{
-        color: {VERDE} !important;
-        font-weight: 600 !important;
+    .filtros-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
     }}
-    [data-testid="stExpander"] summary svg {{
-        fill: {VERDE} !important;
-        color: {VERDE} !important;
-    }}
-
-    /* Filtros — labels na area principal (nao sidebar) */
-    [data-testid="stExpander"] label {{
-        color: #64748b !important;
-        font-size: 0.78rem !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 600 !important;
+    .filtros-titulo {{
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: {VERDE};
     }}
 
-    /* Filtros — multiselect na area principal */
-    [data-testid="stExpander"] [data-testid="stMultiSelect"] > div > div {{
-        background: white !important;
+    /* Forcar multiselect claro na area principal (fora da sidebar) */
+    [data-testid="stAppViewContainer"] .stMultiSelect > div > div {{
+        background: #f8f7f5 !important;
         border: 1px solid #d4d0c8 !important;
         border-radius: 8px !important;
         color: #333 !important;
+        min-height: 38px !important;
     }}
-    [data-testid="stExpander"] span[data-baseweb="tag"] {{
-        background: {VERDE} !important;
-        color: white !important;
+    [data-testid="stAppViewContainer"] .stMultiSelect label {{
+        color: #555 !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        text-transform: none !important;
+    }}
+    /* Tags dos filtros — azul claro com texto azul escuro */
+    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] {{
+        background: #e8f0fe !important;
+        color: #1a3a5c !important;
         border-radius: 6px !important;
         font-size: 0.75rem !important;
+        font-weight: 500 !important;
+        border: 1px solid #c5d9f0 !important;
     }}
-    [data-testid="stExpander"] span[data-baseweb="tag"] span {{
-        color: white !important;
+    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] span {{
+        color: #1a3a5c !important;
     }}
-    [data-testid="stExpander"] span[data-baseweb="tag"] svg {{
-        fill: rgba(255,255,255,0.7) !important;
+    [data-testid="stAppViewContainer"] span[data-baseweb="tag"] svg {{
+        fill: #5b8db8 !important;
     }}
-    [data-testid="stExpander"] [data-testid="stMultiSelect"] svg {{
+    /* Icones do multiselect */
+    [data-testid="stAppViewContainer"] .stMultiSelect svg {{
         fill: #999 !important;
     }}
-
-    /* Filtros — text input na area principal */
-    [data-testid="stExpander"] input {{
+    /* Dropdown do multiselect */
+    [data-testid="stAppViewContainer"] .stMultiSelect [data-baseweb="popover"] {{
         background: white !important;
+    }}
+
+    /* Text input na area principal */
+    [data-testid="stAppViewContainer"] .stTextInput input {{
+        background: #f8f7f5 !important;
         border: 1px solid #d4d0c8 !important;
         border-radius: 8px !important;
         color: #333 !important;
     }}
-    [data-testid="stExpander"] input::placeholder {{
+    [data-testid="stAppViewContainer"] .stTextInput label {{
+        color: #555 !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        text-transform: none !important;
+    }}
+    [data-testid="stAppViewContainer"] .stTextInput input::placeholder {{
         color: #aaa !important;
     }}
 
@@ -325,32 +342,43 @@ if pagina == "Dashboard":
 elif pagina == "Casos":
     st.markdown("## Casos")
 
-    # ── Filtros (dentro da pagina Casos) ─────────────────────
-    with st.expander("Filtros", expanded=False):
-        col_busca, col_nucleo, col_resp, col_prio, col_status = st.columns(5)
+    # ── Filtros (dentro de um container branco) ──────────────
+    st.markdown('<div class="filtros-container">', unsafe_allow_html=True)
+    st.markdown('<div class="filtros-header"><span class="filtros-titulo">Filtros</span></div>', unsafe_allow_html=True)
 
-        with col_busca:
-            busca = st.text_input("Buscar", placeholder="Nome ou cliente...")
-        with col_nucleo:
-            nucleo = st.multiselect(
-                "Nucleo", sorted(df["nucleo"].dropna().unique()),
-                default=sorted(df["nucleo"].dropna().unique())
-            )
-        with col_resp:
-            responsavel = st.multiselect(
-                "Responsavel", sorted(df["responsavel"].dropna().unique()),
-                default=sorted(df["responsavel"].dropna().unique())
-            )
-        with col_prio:
-            prioridade = st.multiselect(
-                "Prioridade", sorted(df["prioridade"].dropna().unique()),
-                default=sorted(df["prioridade"].dropna().unique())
-            )
-        with col_status:
-            status_filtro = st.multiselect(
-                "Status", sorted(df["status"].unique()),
-                default=sorted(df["status"].unique())
-            )
+    # Linha 1: Busca + Nucleo + Responsavel
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        busca = st.text_input("Buscar", placeholder="Nome ou cliente...", label_visibility="visible")
+    with col2:
+        nucleo = st.multiselect(
+            "N\u00facleo", sorted(df["nucleo"].dropna().unique()),
+            default=sorted(df["nucleo"].dropna().unique())
+        )
+    with col3:
+        responsavel = st.multiselect(
+            "Respons\u00e1vel", sorted(df["responsavel"].dropna().unique()),
+            default=sorted(df["responsavel"].dropna().unique())
+        )
+
+    # Linha 2: Prioridade + Status + Botao limpar
+    col4, col5, col6 = st.columns([2, 2, 1])
+    with col4:
+        prioridade = st.multiselect(
+            "Prioridade", sorted(df["prioridade"].dropna().unique()),
+            default=sorted(df["prioridade"].dropna().unique())
+        )
+    with col5:
+        status_filtro = st.multiselect(
+            "Status", sorted(df["status"].unique()),
+            default=sorted(df["status"].unique())
+        )
+    with col6:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Limpar filtros", use_container_width=True):
+            st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Aplicar filtros
     mask = (
@@ -457,7 +485,7 @@ elif pagina == "Casos":
                     novo = st.selectbox(
                         "Status",
                         STATUS_OPTIONS,
-                        index=STATUS_OPTIONS.index(caso["status"]) if caso["status"] in STATUS_OPTIONS else len(STATUS_OPTIONS) - 1,
+                        index=STATUS_OPTIONS.index(caso["status"]) if caso["status"] in STATUS_OPTIONS else 0,
                         key=f"status_{caso['id']}",
                         label_visibility="collapsed"
                     )
