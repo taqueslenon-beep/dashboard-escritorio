@@ -52,7 +52,7 @@ st.markdown(f"""
 
     /* Fundo off-white geral */
     .stApp {{ background-color: {OFF_WHITE}; }}
-    .block-container {{ padding: 1rem 2.5rem 1.5rem 2.5rem; max-width: 100%; }}
+    .block-container {{ padding: 2.5rem 2.5rem 1.5rem 2.5rem; max-width: 100%; }}
     header[data-testid="stHeader"] {{ background: {OFF_WHITE}; }}
 
     /* Sidebar */
