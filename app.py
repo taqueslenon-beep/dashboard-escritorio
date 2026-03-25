@@ -19,7 +19,7 @@ STATUS_OPTIONS = [
     "ARQUIVADO", "EM MONITORAMENTO", "SUBSTABELECIDO", "SEM STATUS"
 ]
 
-st.set_page_config(page_title="Escritorio", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Escritorio", page_icon="\u2696\ufe0f", layout="wide")
 
 # ── CSS ──────────────────────────────────────────────────────
 st.markdown(f"""
@@ -121,16 +121,13 @@ def salvar_status(caso_id, novo_status):
 
 # ── Sidebar ──────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## \u2696\ufe0f Escritorio")
-    st.markdown("---")
-
     pagina = option_menu(
         None,
         ["Dashboard", "Casos"],
         icons=["bar-chart-fill", "folder2-open"],
         default_index=0,
         styles={
-            "container": {"padding": "0", "background-color": "transparent"},
+            "container": {"padding": "8px 0 0 0", "background-color": "transparent"},
             "icon": {"color": "#a8c4b8", "font-size": "18px"},
             "nav-link": {
                 "font-size": "15px", "text-align": "left", "margin": "2px 0",
@@ -149,63 +146,26 @@ with st.sidebar:
     if st.button("\u21bb Atualizar dados", use_container_width=True):
         st.session_state.pop("dados", None)
 
-    st.markdown("#### Filtros")
-    busca = st.text_input("Buscar", placeholder="Nome ou cliente...")
-
 # ── Carregar dados ────────────────────────────────────────────
 if "dados" not in st.session_state:
     st.session_state.dados = carregar_dados()
 
 df = st.session_state.dados
 
-# ── Sidebar: Filtros ──────────────────────────────────────────
-with st.sidebar:
-    nucleo = st.multiselect(
-        "Nucleo", sorted(df["nucleo"].dropna().unique()),
-        default=sorted(df["nucleo"].dropna().unique())
-    )
-    responsavel = st.multiselect(
-        "Responsavel", sorted(df["responsavel"].dropna().unique()),
-        default=sorted(df["responsavel"].dropna().unique())
-    )
-    prioridade = st.multiselect(
-        "Prioridade", sorted(df["prioridade"].dropna().unique()),
-        default=sorted(df["prioridade"].dropna().unique())
-    )
-    status_filtro = st.multiselect(
-        "Status", sorted(df["status"].unique()),
-        default=sorted(df["status"].unique())
-    )
-
-# Aplicar filtros
-mask = (
-    df["nucleo"].isin(nucleo) &
-    df["responsavel"].isin(responsavel) &
-    df["prioridade"].isin(prioridade) &
-    df["status"].isin(status_filtro)
-)
-if busca:
-    busca_lower = busca.lower()
-    mask = mask & (
-        df["nome_do_caso"].str.lower().str.contains(busca_lower, na=False) |
-        df["cliente"].str.lower().str.contains(busca_lower, na=False)
-    )
-dados = df[mask]
-
 # ══════════════════════════════════════════════════════════════
 # PAGINA: DASHBOARD
 # ══════════════════════════════════════════════════════════════
 if pagina == "Dashboard":
-    st.markdown(f"## Dashboard")
-    st.caption(f"{len(dados)} de {len(df)} casos filtrados")
+    st.markdown("## Dashboard")
+    st.caption(f"{len(df)} casos no total")
 
     # ── Metricas ──────────────────────────────────────────────
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Total", len(dados))
-    c2.metric("P1", len(dados[dados["prioridade"] == "P1"]))
-    c3.metric("Ambiental", len(dados[dados["nucleo"] == "AMBIENTAL"]))
-    c4.metric("Lenon", len(dados[dados["responsavel"] == "LENON"]))
-    c5.metric("Gilberto", len(dados[dados["responsavel"] == "GILBERTO"]))
+    c1.metric("Total", len(df))
+    c2.metric("P1", len(df[df["prioridade"] == "P1"]))
+    c3.metric("Ambiental", len(df[df["nucleo"] == "AMBIENTAL"]))
+    c4.metric("Lenon", len(df[df["responsavel"] == "LENON"]))
+    c5.metric("Gilberto", len(df[df["responsavel"] == "GILBERTO"]))
 
     st.markdown("---")
 
@@ -213,7 +173,7 @@ if pagina == "Dashboard":
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
-        nucleo_ct = dados["nucleo"].value_counts().reset_index()
+        nucleo_ct = df["nucleo"].value_counts().reset_index()
         nucleo_ct.columns = ["Nucleo", "Qtd"]
         fig = px.pie(nucleo_ct, values="Qtd", names="Nucleo", hole=0.45,
                      color_discrete_sequence=[VERDE, "#3d6b5a", "#5a9a80", "#8bc4a9"])
@@ -224,7 +184,7 @@ if pagina == "Dashboard":
         st.plotly_chart(fig, use_container_width=True)
 
     with col_g2:
-        prio_ct = dados["prioridade"].value_counts().sort_index().reset_index()
+        prio_ct = df["prioridade"].value_counts().sort_index().reset_index()
         prio_ct.columns = ["Prioridade", "Qtd"]
         cores = {"P1": "#c0392b", "P2": "#e67e22", "P3": "#27ae60", "P4": "#95a5a6"}
         fig = px.bar(prio_ct, x="Prioridade", y="Qtd", color="Prioridade",
@@ -238,7 +198,7 @@ if pagina == "Dashboard":
     col_g3, col_g4 = st.columns(2)
 
     with col_g3:
-        status_ct = dados["status"].value_counts().reset_index()
+        status_ct = df["status"].value_counts().reset_index()
         status_ct.columns = ["Status", "Qtd"]
         fig = px.pie(status_ct, values="Qtd", names="Status", hole=0.45,
                      color_discrete_sequence=px.colors.qualitative.Set2)
@@ -249,7 +209,7 @@ if pagina == "Dashboard":
         st.plotly_chart(fig, use_container_width=True)
 
     with col_g4:
-        cross = dados.groupby(["responsavel", "nucleo"]).size().reset_index(name="Qtd")
+        cross = df.groupby(["responsavel", "nucleo"]).size().reset_index(name="Qtd")
         fig = px.bar(cross, x="responsavel", y="Qtd", color="nucleo", barmode="stack",
                      color_discrete_sequence=[VERDE, "#3d6b5a", "#5a9a80"],
                      labels={"responsavel": "Responsavel", "nucleo": "Nucleo"})
@@ -264,6 +224,49 @@ if pagina == "Dashboard":
 # ══════════════════════════════════════════════════════════════
 elif pagina == "Casos":
     st.markdown("## Casos")
+
+    # ── Filtros (dentro da pagina Casos) ─────────────────────
+    with st.expander("Filtros", expanded=False):
+        col_busca, col_nucleo, col_resp, col_prio, col_status = st.columns(5)
+
+        with col_busca:
+            busca = st.text_input("Buscar", placeholder="Nome ou cliente...")
+        with col_nucleo:
+            nucleo = st.multiselect(
+                "Nucleo", sorted(df["nucleo"].dropna().unique()),
+                default=sorted(df["nucleo"].dropna().unique())
+            )
+        with col_resp:
+            responsavel = st.multiselect(
+                "Responsavel", sorted(df["responsavel"].dropna().unique()),
+                default=sorted(df["responsavel"].dropna().unique())
+            )
+        with col_prio:
+            prioridade = st.multiselect(
+                "Prioridade", sorted(df["prioridade"].dropna().unique()),
+                default=sorted(df["prioridade"].dropna().unique())
+            )
+        with col_status:
+            status_filtro = st.multiselect(
+                "Status", sorted(df["status"].unique()),
+                default=sorted(df["status"].unique())
+            )
+
+    # Aplicar filtros
+    mask = (
+        df["nucleo"].isin(nucleo) &
+        df["responsavel"].isin(responsavel) &
+        df["prioridade"].isin(prioridade) &
+        df["status"].isin(status_filtro)
+    )
+    if busca:
+        busca_lower = busca.lower()
+        mask = mask & (
+            df["nome_do_caso"].str.lower().str.contains(busca_lower, na=False) |
+            df["cliente"].str.lower().str.contains(busca_lower, na=False)
+        )
+    dados = df[mask]
+
     st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
     # ── Sub-abas: Tabela e Status ─────────────────────────────
