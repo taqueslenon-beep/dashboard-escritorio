@@ -369,6 +369,18 @@ st.markdown(f"""
         border: 1px solid #e8e4dc;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }}
+
+    /* Botoes de status coloridos */
+    button[kind="secondary"]:has(p) {{
+        font-size: 0.68rem !important;
+        padding: 4px 6px !important;
+        height: auto !important;
+        min-height: 30px !important;
+    }}
+    /* Em andamento - amarelo */
+    button[key*="and_"] p, div[data-testid="stButton"] button p {{
+        font-size: 0.68rem !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -608,47 +620,58 @@ elif pagina == "Casos":
         st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
 
     with tab_status:
-        st.caption("Clique na coluna Status para alterar. Depois clique em **Salvar alteracoes**.")
+        # Filtrar apenas casos SEM STATUS
+        sem_status = dados[dados["status"] == "SEM STATUS"]
+        com_status = dados[dados["status"] != "SEM STATUS"]
 
-        # Preparar dataframe editavel
-        df_editor = dados[["id", "nome_do_caso", "nucleo", "prioridade", "status"]].copy()
-        df_editor.columns = ["id", "Caso", "Nucleo", "Prioridade", "Status"]
+        st.caption(f"{len(sem_status)} caso(s) sem status  ·  {len(com_status)} ja classificado(s)")
 
-        editado = st.data_editor(
-            df_editor,
-            column_config={
-                "id": None,  # esconder coluna id
-                "Caso": st.column_config.TextColumn("Caso", disabled=True, width="large"),
-                "Nucleo": st.column_config.TextColumn("Nucleo", disabled=True, width="small"),
-                "Prioridade": st.column_config.TextColumn("Prioridade", disabled=True, width="small"),
-                "Status": st.column_config.SelectboxColumn(
-                    "Status",
-                    options=STATUS_OPTIONS,
-                    required=True,
-                    width="medium",
-                ),
-            },
-            hide_index=True,
-            use_container_width=True,
-            num_rows="fixed",
-            key="editor_status",
-        )
+        if len(sem_status) == 0:
+            st.success("Todos os casos filtrados ja possuem status!")
+        else:
+            # CSS para botoes de status
+            st.markdown("""
+            <style>
+                .status-row {
+                    display: flex; align-items: center; gap: 8px;
+                    padding: 8px 12px; border-bottom: 1px solid #eae6df;
+                }
+                .status-row:hover { background: #faf8f5; }
+                .caso-nome { flex: 1; font-size: 0.82rem; color: #333; }
+                .caso-info { font-size: 0.68rem; color: #999; margin-top: 1px; }
+            </style>
+            """, unsafe_allow_html=True)
 
-        # Detectar mudancas e salvar
-        if st.button("Salvar alteracoes", type="primary", use_container_width=True):
-            alterados = 0
-            supabase = get_supabase()
-            for i, row in editado.iterrows():
-                caso_id = df_editor.iloc[i]["id"]
-                status_original = df_editor.iloc[i]["Status"]
-                status_novo = row["Status"]
-                if status_novo != status_original:
-                    value = None if status_novo == "SEM STATUS" else status_novo
-                    supabase.table("casos").update({"status": value}).eq("id", caso_id).execute()
-                    st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = status_novo
-                    alterados += 1
-            if alterados > 0:
-                st.toast(f"Salvo! {alterados} caso(s) atualizado(s).")
-                st.rerun()
-            else:
-                st.info("Nenhuma alteracao detectada.")
+            for _, caso in sem_status.iterrows():
+                c_nome, c_and, c_con, c_sub, c_mon = st.columns([4, 1, 1, 1, 1])
+                with c_nome:
+                    st.markdown(
+                        f"**{caso['nome_do_caso']}**  \n"
+                        f"<span style='font-size:0.72rem;color:#999;'>"
+                        f"{caso['nucleo']} · {caso['responsavel']} · {caso['prioridade']}</span>",
+                        unsafe_allow_html=True
+                    )
+                with c_and:
+                    if st.button("Em andamento", key=f"and_{caso['id']}",
+                                 use_container_width=True, type="secondary"):
+                        salvar_status(caso["id"], "EM ANDAMENTO")
+                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "EM ANDAMENTO"
+                        st.rerun()
+                with c_con:
+                    if st.button("Concluido", key=f"con_{caso['id']}",
+                                 use_container_width=True, type="secondary"):
+                        salvar_status(caso["id"], "CONCLUIDO")
+                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "CONCLUIDO"
+                        st.rerun()
+                with c_sub:
+                    if st.button("Substabelecido", key=f"sub_{caso['id']}",
+                                 use_container_width=True, type="secondary"):
+                        salvar_status(caso["id"], "SUBSTABELECIDO")
+                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "SUBSTABELECIDO"
+                        st.rerun()
+                with c_mon:
+                    if st.button("Monitoramento", key=f"mon_{caso['id']}",
+                                 use_container_width=True, type="secondary"):
+                        salvar_status(caso["id"], "EM MONITORAMENTO")
+                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "EM MONITORAMENTO"
+                        st.rerun()
