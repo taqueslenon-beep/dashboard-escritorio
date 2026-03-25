@@ -52,7 +52,7 @@ st.markdown(f"""
 
     /* Fundo off-white geral */
     .stApp {{ background-color: {OFF_WHITE}; }}
-    .block-container {{ padding: 0.5rem 2.5rem 1.5rem 2.5rem; max-width: 100%; }}
+    .block-container {{ padding: 1rem 2.5rem 1.5rem 2.5rem; max-width: 100%; }}
     header[data-testid="stHeader"] {{ background: {OFF_WHITE}; }}
 
     /* Sidebar */
@@ -143,13 +143,30 @@ st.markdown(f"""
     }}
     /* Tags — estilo base compacto */
     [data-testid="stAppViewContainer"] span[data-baseweb="tag"] {{
-        border-radius: 4px !important;
-        font-size: 0.7rem !important;
+        border-radius: 3px !important;
+        font-size: 0.62rem !important;
         font-weight: 600 !important;
         border: none !important;
+        padding: 1px 5px !important;
+        height: 18px !important;
+        line-height: 18px !important;
+    }}
+    /* Inputs menores */
+    [data-testid="stAppViewContainer"] .stMultiSelect > div > div,
+    [data-testid="stAppViewContainer"] .stMultiSelect [data-baseweb="select"] > div {{
+        min-height: 28px !important;
+        padding: 1px 4px !important;
+        font-size: 0.72rem !important;
+    }}
+    [data-testid="stAppViewContainer"] .stTextInput input {{
+        height: 28px !important;
+        font-size: 0.72rem !important;
         padding: 2px 8px !important;
-        height: 22px !important;
-        line-height: 22px !important;
+    }}
+    [data-testid="stAppViewContainer"] .stMultiSelect label,
+    [data-testid="stAppViewContainer"] .stTextInput label {{
+        font-size: 0.68rem !important;
+        margin-bottom: 1px !important;
     }}
 
     /* ── Tags coloridas por conteudo (Nucleo) ────────── */
