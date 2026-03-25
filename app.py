@@ -608,34 +608,47 @@ elif pagina == "Casos":
         st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
 
     with tab_status:
-        st.markdown("#### Gerenciar Status")
-        st.caption("Altere o status de qualquer caso \u2014 a mudanca e salva automaticamente.")
+        st.caption("Clique na coluna Status para alterar. Depois clique em **Salvar alteracoes**.")
 
-        col_f1, col_f2 = st.columns([1, 3])
-        with col_f1:
-            prio_filter = st.selectbox("Filtrar prioridade", ["Todas", "P1", "P2", "P3", "P4"])
+        # Preparar dataframe editavel
+        df_editor = dados[["id", "nome_do_caso", "nucleo", "prioridade", "status"]].copy()
+        df_editor.columns = ["id", "Caso", "Nucleo", "Prioridade", "Status"]
 
-        dados_status = dados if prio_filter == "Todas" else dados[dados["prioridade"] == prio_filter]
+        editado = st.data_editor(
+            df_editor,
+            column_config={
+                "id": None,  # esconder coluna id
+                "Caso": st.column_config.TextColumn("Caso", disabled=True, width="large"),
+                "Nucleo": st.column_config.TextColumn("Nucleo", disabled=True, width="small"),
+                "Prioridade": st.column_config.TextColumn("Prioridade", disabled=True, width="small"),
+                "Status": st.column_config.SelectboxColumn(
+                    "Status",
+                    options=STATUS_OPTIONS,
+                    required=True,
+                    width="medium",
+                ),
+            },
+            hide_index=True,
+            use_container_width=True,
+            num_rows="fixed",
+            key="editor_status",
+        )
 
-        for _, caso in dados_status.iterrows():
-            with st.container():
-                col1, col2, col3 = st.columns([3, 1, 1.5])
-                with col1:
-                    st.markdown(f"**{caso['nome_do_caso']}**")
-                    st.caption(f"{caso['nucleo']}  \u00b7  {caso['responsavel']}  \u00b7  {caso['prioridade']}")
-                with col2:
-                    st.caption(f"Cliente: {caso['cliente']}")
-                with col3:
-                    novo = st.selectbox(
-                        "Status",
-                        STATUS_OPTIONS,
-                        index=STATUS_OPTIONS.index(caso["status"]) if caso["status"] in STATUS_OPTIONS else 0,
-                        key=f"status_{caso['id']}",
-                        label_visibility="collapsed"
-                    )
-                    if novo != caso["status"]:
-                        salvar_status(caso["id"], novo)
-                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = novo
-                        st.toast(f"\u2705 Status atualizado: {novo}")
-                        st.rerun()
-                st.divider()
+        # Detectar mudancas e salvar
+        if st.button("Salvar alteracoes", type="primary", use_container_width=True):
+            alterados = 0
+            supabase = get_supabase()
+            for i, row in editado.iterrows():
+                caso_id = df_editor.iloc[i]["id"]
+                status_original = df_editor.iloc[i]["Status"]
+                status_novo = row["Status"]
+                if status_novo != status_original:
+                    value = None if status_novo == "SEM STATUS" else status_novo
+                    supabase.table("casos").update({"status": value}).eq("id", caso_id).execute()
+                    st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = status_novo
+                    alterados += 1
+            if alterados > 0:
+                st.toast(f"Salvo! {alterados} caso(s) atualizado(s).")
+                st.rerun()
+            else:
+                st.info("Nenhuma alteracao detectada.")
