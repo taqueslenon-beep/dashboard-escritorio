@@ -1,67 +1,103 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from supabase import create_client
+from streamlit_option_menu import option_menu
 
-# ── Configuração ──────────────────────────────────────────────
+# ── Configuracao ──────────────────────────────────────────────
 SUPABASE_URL = "https://tjpasfrzsogdhxnerxhs.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqcGFzZnJ6c29nZGh4bmVyeGhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MDIyMTMsImV4cCI6MjA4OTk3ODIxM30.6Mzblk0TNdUjQGQGAsjrRpgfSp4gUB_jSTQxyJpBSqc"
 
+VERDE = "#223631"
+VERDE_CLARO = "#2d4a3e"
+OFF_WHITE = "#f5f3ef"
+CREME = "#eae6df"
+
 STATUS_OPTIONS = [
-    "EM ANDAMENTO", "CONCLUÍDO", "AGUARDANDO CLIENTE",
+    "EM ANDAMENTO", "CONCLUIDO", "AGUARDANDO CLIENTE",
     "AGUARDANDO TRIBUNAL", "EM RECURSO", "SUSPENSO",
     "ARQUIVADO", "EM MONITORAMENTO", "SUBSTABELECIDO", "SEM STATUS"
 ]
 
-st.set_page_config(page_title="Escritório", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Escritorio", page_icon="⚖️", layout="wide")
 
-# ── CSS Minimalista ───────────────────────────────────────────
-st.markdown("""
+# ── CSS ──────────────────────────────────────────────────────
+st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    * { font-family: 'Inter', sans-serif; }
-    .block-container { padding: 2rem 2.5rem; max-width: 100%; }
-    header[data-testid="stHeader"] { background: transparent; }
+    * {{ font-family: 'Inter', sans-serif; }}
 
-    /* Métricas */
-    [data-testid="stMetric"] {
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 16px 20px;
-        border-left: 4px solid #2563eb;
-    }
-    [data-testid="stMetricValue"] { font-size: 1.8rem; font-weight: 700; color: #1a1a2e; }
-    [data-testid="stMetricLabel"] { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 2px solid #e2e8f0; }
-    .stTabs [data-baseweb="tab"] {
-        background: transparent; color: #64748b; border-radius: 8px 8px 0 0;
-        padding: 10px 20px; font-weight: 500; font-size: 0.85rem;
-    }
-    .stTabs [aria-selected="true"] { background: #2563eb !important; color: white !important; }
-
-    /* Dataframe */
-    .stDataFrame { border-radius: 8px; border: 1px solid #e2e8f0; }
+    /* Fundo off-white geral */
+    .stApp {{ background-color: {OFF_WHITE}; }}
+    .block-container {{ padding: 1.5rem 2.5rem; max-width: 100%; }}
+    header[data-testid="stHeader"] {{ background: {OFF_WHITE}; }}
 
     /* Sidebar */
-    [data-testid="stSidebar"] { background: #fafbfc; border-right: 1px solid #e2e8f0; }
-    [data-testid="stSidebar"] .block-container { padding-top: 1.5rem; }
+    [data-testid="stSidebar"] {{
+        background: {VERDE};
+        border-right: none;
+    }}
+    [data-testid="stSidebar"] .block-container {{ padding-top: 1rem; }}
+    [data-testid="stSidebar"] * {{ color: white; }}
+    [data-testid="stSidebar"] label {{ color: rgba(255,255,255,0.7) !important; }}
+    [data-testid="stSidebar"] .stMarkdown p {{ color: rgba(255,255,255,0.9); }}
+    [data-testid="stSidebar"] .stMarkdown h1,
+    [data-testid="stSidebar"] .stMarkdown h2,
+    [data-testid="stSidebar"] .stMarkdown h3,
+    [data-testid="stSidebar"] .stMarkdown h4 {{ color: white; }}
+
+    /* Sidebar inputs */
+    [data-testid="stSidebar"] .stTextInput input,
+    [data-testid="stSidebar"] .stMultiSelect > div > div {{
+        background: {VERDE_CLARO};
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+    }}
+    [data-testid="stSidebar"] .stButton > button {{
+        background: rgba(255,255,255,0.12);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+    }}
+    [data-testid="stSidebar"] .stButton > button:hover {{
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.4);
+    }}
+
+    /* Metricas */
+    [data-testid="stMetric"] {{
+        background: white;
+        border-radius: 12px;
+        padding: 18px 22px;
+        border-left: 4px solid {VERDE};
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }}
+    [data-testid="stMetricValue"] {{ font-size: 1.8rem; font-weight: 700; color: {VERDE}; }}
+    [data-testid="stMetricLabel"] {{ font-size: 0.78rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }}
+
+    /* Dataframe */
+    .stDataFrame {{ border-radius: 10px; border: 1px solid #e0ddd6; }}
 
     /* Selectbox */
-    .stSelectbox > div > div { font-size: 0.85rem; }
+    .stSelectbox > div > div {{ font-size: 0.85rem; }}
 
     /* Divider */
-    hr { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+    hr {{ border: none; border-top: 1px solid #ddd8cf; margin: 1.2rem 0; }}
 
     /* Hide streamlit branding */
-    #MainMenu { visibility: hidden; }
-    footer { visibility: hidden; }
+    #MainMenu {{ visibility: hidden; }}
+    footer {{ visibility: hidden; }}
 
-    .status-badge {
-        display: inline-block; padding: 4px 12px; border-radius: 20px;
-        font-size: 0.75rem; font-weight: 600; letter-spacing: 0.3px;
-    }
+    /* Status cards */
+    .status-card {{
+        background: white;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 10px;
+        border: 1px solid #e8e4dc;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -75,7 +111,7 @@ def carregar_dados():
     response = supabase.table("casos").select("*").order("prioridade").order("id").execute()
     df = pd.DataFrame(response.data)
     df["status"] = df["status"].fillna("SEM STATUS")
-    df["cliente"] = df["cliente"].fillna("—")
+    df["cliente"] = df["cliente"].fillna("\u2014")
     return df
 
 def salvar_status(caso_id, novo_status):
@@ -83,33 +119,63 @@ def salvar_status(caso_id, novo_status):
     value = None if novo_status == "SEM STATUS" else novo_status
     supabase.table("casos").update({"status": value}).eq("id", caso_id).execute()
 
+# ── Sidebar ──────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("## \u2696\ufe0f Escritorio")
+    st.markdown("---")
+
+    pagina = option_menu(
+        None,
+        ["Dashboard", "Casos"],
+        icons=["bar-chart-fill", "folder2-open"],
+        default_index=0,
+        styles={
+            "container": {"padding": "0", "background-color": "transparent"},
+            "icon": {"color": "#a8c4b8", "font-size": "18px"},
+            "nav-link": {
+                "font-size": "15px", "text-align": "left", "margin": "2px 0",
+                "color": "rgba(255,255,255,0.75)", "border-radius": "8px",
+                "padding": "10px 14px",
+            },
+            "nav-link-selected": {
+                "background-color": "rgba(255,255,255,0.15)",
+                "color": "white", "font-weight": "600",
+            },
+        }
+    )
+
+    st.markdown("---")
+
+    if st.button("\u21bb Atualizar dados", use_container_width=True):
+        st.session_state.pop("dados", None)
+
+    st.markdown("#### Filtros")
+    busca = st.text_input("Buscar", placeholder="Nome ou cliente...")
+
 # ── Carregar dados ────────────────────────────────────────────
-if "dados" not in st.session_state or st.sidebar.button("↻ Atualizar dados", use_container_width=True):
+if "dados" not in st.session_state:
     st.session_state.dados = carregar_dados()
 
 df = st.session_state.dados
 
 # ── Sidebar: Filtros ──────────────────────────────────────────
-st.sidebar.markdown("#### Filtros")
-
-busca = st.sidebar.text_input("Buscar", placeholder="Nome ou cliente...")
-
-nucleo = st.sidebar.multiselect(
-    "Núcleo", sorted(df["nucleo"].dropna().unique()),
-    default=sorted(df["nucleo"].dropna().unique())
-)
-responsavel = st.sidebar.multiselect(
-    "Responsável", sorted(df["responsavel"].dropna().unique()),
-    default=sorted(df["responsavel"].dropna().unique())
-)
-prioridade = st.sidebar.multiselect(
-    "Prioridade", sorted(df["prioridade"].dropna().unique()),
-    default=sorted(df["prioridade"].dropna().unique())
-)
-status_filtro = st.sidebar.multiselect(
-    "Status", sorted(df["status"].unique()),
-    default=sorted(df["status"].unique())
-)
+with st.sidebar:
+    nucleo = st.multiselect(
+        "Nucleo", sorted(df["nucleo"].dropna().unique()),
+        default=sorted(df["nucleo"].dropna().unique())
+    )
+    responsavel = st.multiselect(
+        "Responsavel", sorted(df["responsavel"].dropna().unique()),
+        default=sorted(df["responsavel"].dropna().unique())
+    )
+    prioridade = st.multiselect(
+        "Prioridade", sorted(df["prioridade"].dropna().unique()),
+        default=sorted(df["prioridade"].dropna().unique())
+    )
+    status_filtro = st.multiselect(
+        "Status", sorted(df["status"].unique()),
+        default=sorted(df["status"].unique())
+    )
 
 # Aplicar filtros
 mask = (
@@ -126,82 +192,46 @@ if busca:
     )
 dados = df[mask]
 
-# ── Header ────────────────────────────────────────────────────
-st.markdown(f"## ⚖️ Escritório")
-st.caption(f"{len(dados)} de {len(df)} casos")
+# ══════════════════════════════════════════════════════════════
+# PAGINA: DASHBOARD
+# ══════════════════════════════════════════════════════════════
+if pagina == "Dashboard":
+    st.markdown(f"## Dashboard")
+    st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
-# ── Métricas ──────────────────────────────────────────────────
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("Total", len(dados))
-c2.metric("P1", len(dados[dados["prioridade"] == "P1"]))
-c3.metric("Ambiental", len(dados[dados["nucleo"] == "AMBIENTAL"]))
-c4.metric("Lenon", len(dados[dados["responsavel"] == "LENON"]))
-c5.metric("Gilberto", len(dados[dados["responsavel"] == "GILBERTO"]))
+    # ── Metricas ──────────────────────────────────────────────
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Total", len(dados))
+    c2.metric("P1", len(dados[dados["prioridade"] == "P1"]))
+    c3.metric("Ambiental", len(dados[dados["nucleo"] == "AMBIENTAL"]))
+    c4.metric("Lenon", len(dados[dados["responsavel"] == "LENON"]))
+    c5.metric("Gilberto", len(dados[dados["responsavel"] == "GILBERTO"]))
 
-st.markdown("---")
+    st.markdown("---")
 
-# ── Abas ──────────────────────────────────────────────────────
-tab_status, tab_visao, tab_tabela = st.tabs(["✏️ Status", "📊 Visão Geral", "📋 Todos os Casos"])
-
-# ── ABA: STATUS ───────────────────────────────────────────────
-with tab_status:
-    st.markdown("#### Gerenciar Status")
-    st.caption("Altere o status de qualquer caso — a mudança é salva automaticamente no banco.")
-
-    # Filtro rápido de prioridade na aba status
-    col_f1, col_f2 = st.columns([1, 3])
-    with col_f1:
-        prio_filter = st.selectbox("Filtrar prioridade", ["Todas", "P1", "P2", "P3", "P4"])
-
-    dados_status = dados if prio_filter == "Todas" else dados[dados["prioridade"] == prio_filter]
-
-    for _, caso in dados_status.iterrows():
-        with st.container():
-            col1, col2, col3 = st.columns([3, 1, 1.5])
-            with col1:
-                st.markdown(f"**{caso['nome_do_caso']}**")
-                st.caption(f"{caso['nucleo']}  ·  {caso['responsavel']}  ·  {caso['prioridade']}")
-            with col2:
-                st.caption(f"Cliente: {caso['cliente']}")
-            with col3:
-                novo = st.selectbox(
-                    "Status",
-                    STATUS_OPTIONS,
-                    index=STATUS_OPTIONS.index(caso["status"]) if caso["status"] in STATUS_OPTIONS else len(STATUS_OPTIONS) - 1,
-                    key=f"status_{caso['id']}",
-                    label_visibility="collapsed"
-                )
-                if novo != caso["status"]:
-                    salvar_status(caso["id"], novo)
-                    st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = novo
-                    st.toast(f"✅ Status atualizado: {novo}")
-                    st.rerun()
-            st.divider()
-
-# ── ABA: VISÃO GERAL ─────────────────────────────────────────
-with tab_visao:
-    import plotly.express as px
-
+    # ── Graficos ──────────────────────────────────────────────
     col_g1, col_g2 = st.columns(2)
 
     with col_g1:
         nucleo_ct = dados["nucleo"].value_counts().reset_index()
-        nucleo_ct.columns = ["Núcleo", "Qtd"]
-        fig = px.pie(nucleo_ct, values="Qtd", names="Núcleo", hole=0.45,
-                     color_discrete_sequence=["#2563eb", "#0f3460", "#7c3aed"])
+        nucleo_ct.columns = ["Nucleo", "Qtd"]
+        fig = px.pie(nucleo_ct, values="Qtd", names="Nucleo", hole=0.45,
+                     color_discrete_sequence=[VERDE, "#3d6b5a", "#5a9a80", "#8bc4a9"])
         fig.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=320,
-                          paper_bgcolor="rgba(0,0,0,0)", font=dict(size=12))
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(size=12, color="#333"))
         fig.update_traces(textinfo="label+value")
         st.plotly_chart(fig, use_container_width=True)
 
     with col_g2:
         prio_ct = dados["prioridade"].value_counts().sort_index().reset_index()
         prio_ct.columns = ["Prioridade", "Qtd"]
-        cores = {"P1": "#ef4444", "P2": "#f59e0b", "P3": "#10b981", "P4": "#94a3b8"}
+        cores = {"P1": "#c0392b", "P2": "#e67e22", "P3": "#27ae60", "P4": "#95a5a6"}
         fig = px.bar(prio_ct, x="Prioridade", y="Qtd", color="Prioridade",
                      color_discrete_map=cores, text="Qtd")
         fig.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=320,
-                          paper_bgcolor="rgba(0,0,0,0)", showlegend=False, font=dict(size=12))
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          showlegend=False, font=dict(size=12, color="#333"))
         fig.update_traces(textposition="outside")
         st.plotly_chart(fig, use_container_width=True)
 
@@ -213,32 +243,76 @@ with tab_visao:
         fig = px.pie(status_ct, values="Qtd", names="Status", hole=0.45,
                      color_discrete_sequence=px.colors.qualitative.Set2)
         fig.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=320,
-                          paper_bgcolor="rgba(0,0,0,0)", font=dict(size=11))
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(size=11, color="#333"))
         fig.update_traces(textinfo="label+value")
         st.plotly_chart(fig, use_container_width=True)
 
     with col_g4:
         cross = dados.groupby(["responsavel", "nucleo"]).size().reset_index(name="Qtd")
         fig = px.bar(cross, x="responsavel", y="Qtd", color="nucleo", barmode="stack",
-                     color_discrete_sequence=["#2563eb", "#0f3460", "#7c3aed"],
-                     labels={"responsavel": "Responsável", "nucleo": "Núcleo"})
+                     color_discrete_sequence=[VERDE, "#3d6b5a", "#5a9a80"],
+                     labels={"responsavel": "Responsavel", "nucleo": "Nucleo"})
         fig.update_layout(margin=dict(t=30, b=10, l=10, r=10), height=320,
-                          paper_bgcolor="rgba(0,0,0,0)", font=dict(size=12),
+                          paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                          font=dict(size=12, color="#333"),
                           legend=dict(orientation="h", y=-0.15))
         st.plotly_chart(fig, use_container_width=True)
 
-# ── ABA: TABELA ───────────────────────────────────────────────
-with tab_tabela:
-    st.dataframe(
-        dados[["id", "cliente", "nome_do_caso", "nucleo", "responsavel", "prioridade", "status", "grupo"]].rename(
-            columns={"id": "ID", "cliente": "Cliente", "nome_do_caso": "Caso",
-                     "nucleo": "Núcleo", "responsavel": "Resp.", "prioridade": "Prio",
-                     "status": "Status", "grupo": "Grupo"}
-        ),
-        use_container_width=True,
-        height=600,
-        hide_index=True
-    )
+# ══════════════════════════════════════════════════════════════
+# PAGINA: CASOS
+# ══════════════════════════════════════════════════════════════
+elif pagina == "Casos":
+    st.markdown("## Casos")
+    st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
-    csv = dados.to_csv(index=False).encode("utf-8")
-    st.download_button("⬇ Exportar CSV", csv, "casos.csv", "text/csv")
+    # ── Sub-abas: Tabela e Status ─────────────────────────────
+    tab_tabela, tab_status = st.tabs(["Tabela", "Editar Status"])
+
+    with tab_tabela:
+        st.dataframe(
+            dados[["id", "cliente", "nome_do_caso", "nucleo", "responsavel", "prioridade", "status", "grupo"]].rename(
+                columns={"id": "ID", "cliente": "Cliente", "nome_do_caso": "Caso",
+                         "nucleo": "Nucleo", "responsavel": "Resp.", "prioridade": "Prio",
+                         "status": "Status", "grupo": "Grupo"}
+            ),
+            use_container_width=True,
+            height=600,
+            hide_index=True
+        )
+
+        csv = dados.to_csv(index=False).encode("utf-8")
+        st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
+
+    with tab_status:
+        st.markdown("#### Gerenciar Status")
+        st.caption("Altere o status de qualquer caso \u2014 a mudanca e salva automaticamente.")
+
+        col_f1, col_f2 = st.columns([1, 3])
+        with col_f1:
+            prio_filter = st.selectbox("Filtrar prioridade", ["Todas", "P1", "P2", "P3", "P4"])
+
+        dados_status = dados if prio_filter == "Todas" else dados[dados["prioridade"] == prio_filter]
+
+        for _, caso in dados_status.iterrows():
+            with st.container():
+                col1, col2, col3 = st.columns([3, 1, 1.5])
+                with col1:
+                    st.markdown(f"**{caso['nome_do_caso']}**")
+                    st.caption(f"{caso['nucleo']}  \u00b7  {caso['responsavel']}  \u00b7  {caso['prioridade']}")
+                with col2:
+                    st.caption(f"Cliente: {caso['cliente']}")
+                with col3:
+                    novo = st.selectbox(
+                        "Status",
+                        STATUS_OPTIONS,
+                        index=STATUS_OPTIONS.index(caso["status"]) if caso["status"] in STATUS_OPTIONS else len(STATUS_OPTIONS) - 1,
+                        key=f"status_{caso['id']}",
+                        label_visibility="collapsed"
+                    )
+                    if novo != caso["status"]:
+                        salvar_status(caso["id"], novo)
+                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = novo
+                        st.toast(f"\u2705 Status atualizado: {novo}")
+                        st.rerun()
+                st.divider()
