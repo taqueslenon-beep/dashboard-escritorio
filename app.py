@@ -646,9 +646,10 @@ elif pagina == "Casos":
                 c_nome, c_and, c_con, c_sub, c_mon = st.columns([4, 1, 1, 1, 1])
                 with c_nome:
                     st.markdown(
-                        f"**{caso['nome_do_caso']}**  \n"
-                        f"<span style='font-size:0.72rem;color:#999;'>"
-                        f"{caso['nucleo']} · {caso['responsavel']} · {caso['prioridade']}</span>",
+                        f"<p style='margin:0;font-weight:700;font-size:0.88rem;color:#222;'>"
+                        f"{caso['nome_do_caso']}</p>"
+                        f"<p style='margin:2px 0 0 0;font-size:0.72rem;color:#888;'>"
+                        f"{caso['nucleo']} · {caso['responsavel']} · {caso['prioridade']}</p>",
                         unsafe_allow_html=True
                     )
                 with c_and:
