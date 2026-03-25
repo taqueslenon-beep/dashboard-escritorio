@@ -14,10 +14,26 @@ OFF_WHITE = "#f5f3ef"
 CREME = "#eae6df"
 
 STATUS_OPTIONS = [
-    "EM ANDAMENTO", "CONCLUIDO", "AGUARDANDO CLIENTE",
-    "AGUARDANDO TRIBUNAL", "EM RECURSO", "SUSPENSO",
-    "ARQUIVADO", "EM MONITORAMENTO", "SUBSTABELECIDO", "SEM STATUS"
+    "EM ANDAMENTO", "CONCLUIDO", "SUBSTABELECIDO", "EM MONITORAMENTO"
 ]
+
+# ── Cores dos badges ─────────────────────────────────────────
+CORES_PRIORIDADE = {
+    "P1": {"bg": "#fde8e8", "cor": "#c0392b"},
+    "P2": {"bg": "#fef9e7", "cor": "#b7950b"},
+    "P3": {"bg": "#e8f0fe", "cor": "#2b6cb0"},
+    "P4": {"bg": "#f0f0f0", "cor": "#666666"},
+}
+CORES_STATUS = {
+    "EM ANDAMENTO": {"bg": "#fef9e7", "cor": "#b7950b"},
+    "CONCLUIDO": {"bg": "#e0edda", "cor": "#2d5a1e"},
+    "SUBSTABELECIDO": {"bg": "#e8f5e9", "cor": "#4caf50"},
+    "EM MONITORAMENTO": {"bg": "#fff3e0", "cor": "#e65100"},
+}
+CORES_RESPONSAVEL = {
+    "LENON": {"bg": "#e0e0e0", "cor": "#333333"},
+    "GILBERTO": {"bg": "#f0f0f0", "cor": "#888888"},
+}
 
 st.set_page_config(page_title="Escritorio", page_icon="\u2696\ufe0f", layout="wide")
 
@@ -96,12 +112,6 @@ st.markdown(f"""
 
     /* Dataframe */
     .stDataFrame {{ border-radius: 10px; border: 1px solid #e0ddd6; }}
-    /* Negrito e quebra de texto na coluna Caso (segunda coluna de dados) */
-    .stDataFrame [data-testid="stDataFrameResizable"] td[class*="col1"] {{
-        font-weight: 700 !important;
-        white-space: normal !important;
-        word-wrap: break-word !important;
-    }}
 
     /* Selectbox */
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
@@ -298,25 +308,57 @@ elif pagina == "Casos":
     tab_tabela, tab_status = st.tabs(["Tabela", "Editar Status"])
 
     with tab_tabela:
-        tabela_dados = dados[["cliente", "nome_do_caso", "nucleo", "responsavel", "prioridade", "status"]].rename(
-            columns={"cliente": "Cliente", "nome_do_caso": "Caso",
-                     "nucleo": "Nucleo", "responsavel": "Responsavel",
-                     "prioridade": "Prioridade", "status": "Status"}
-        )
-        st.dataframe(
-            tabela_dados,
-            use_container_width=True,
-            height=600,
-            hide_index=True,
-            column_config={
-                "Caso": st.column_config.TextColumn("Caso", width="large"),
-                "Cliente": st.column_config.TextColumn("Cliente", width="medium"),
-                "Nucleo": st.column_config.TextColumn("Nucleo", width="small"),
-                "Responsavel": st.column_config.TextColumn("Responsavel", width="small"),
-                "Prioridade": st.column_config.TextColumn("Prioridade", width="small"),
-                "Status": st.column_config.TextColumn("Status", width="medium"),
-            }
-        )
+        # ── Funcao para gerar badge HTML ─────────────────────
+        def badge_html(texto, cores_mapa):
+            estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
+            return (
+                f'<span style="background:{estilo["bg"]};color:{estilo["cor"]};'
+                f'padding:4px 10px;border-radius:12px;font-size:0.78rem;'
+                f'font-weight:600;white-space:nowrap;">{texto}</span>'
+            )
+
+        # ── Montar tabela HTML ───────────────────────────────
+        linhas_html = ""
+        for _, row in dados.iterrows():
+            linhas_html += f"""<tr>
+                <td>{row['cliente']}</td>
+                <td style="font-weight:700;">{row['nome_do_caso']}</td>
+                <td>{row['nucleo']}</td>
+                <td>{badge_html(row['responsavel'], CORES_RESPONSAVEL)}</td>
+                <td>{badge_html(row['prioridade'], CORES_PRIORIDADE)}</td>
+                <td>{badge_html(row['status'], CORES_STATUS)}</td>
+            </tr>"""
+
+        tabela_html = f"""
+        <div style="max-height:600px;overflow-y:auto;border:1px solid #e0ddd6;border-radius:10px;">
+        <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:0.85rem;">
+            <thead>
+                <tr style="background:{CREME};position:sticky;top:0;z-index:1;">
+                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prioridade</th>
+                    <th style="padding:12px 14px;text-align:left;border-bottom:2px solid #ddd8cf;color:#64748b;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {linhas_html}
+            </tbody>
+        </table>
+        </div>
+        """
+
+        # CSS para linhas da tabela
+        st.markdown("""
+        <style>
+            table tbody tr { border-bottom: 1px solid #eae6df; }
+            table tbody tr:hover { background-color: #faf8f5; }
+            table tbody td { padding: 10px 14px; color: #333; vertical-align: middle; }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown(tabela_html, unsafe_allow_html=True)
 
         csv = dados.to_csv(index=False).encode("utf-8")
         st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
