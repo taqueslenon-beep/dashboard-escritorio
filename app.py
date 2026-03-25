@@ -14,7 +14,7 @@ OFF_WHITE = "#f5f3ef"
 CREME = "#eae6df"
 
 STATUS_OPTIONS = [
-    "SEM STATUS", "EM ANDAMENTO", "CONCLUIDO", "SUBSTABELECIDO", "EM MONITORAMENTO"
+    "EM ANDAMENTO", "CONCLUIDO", "SUBSTABELECIDO", "EM MONITORAMENTO"
 ]
 
 # ── Cores dos badges ─────────────────────────────────────────
@@ -25,7 +25,6 @@ CORES_PRIORIDADE = {
     "P4": {"bg": "#f0f0f0", "cor": "#666666"},
 }
 CORES_STATUS = {
-    "SEM STATUS": {"bg": "#f0f0f0", "cor": "#999999"},
     "EM ANDAMENTO": {"bg": "#fef9e7", "cor": "#b7950b"},
     "CONCLUIDO": {"bg": "#e0edda", "cor": "#2d5a1e"},
     "SUBSTABELECIDO": {"bg": "#e8f5e9", "cor": "#4caf50"},
@@ -553,126 +552,39 @@ elif pagina == "Casos":
 
     st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
-    # ── Sub-abas: Tabela e Status ─────────────────────────────
-    tab_tabela, tab_status = st.tabs(["Tabela", "Editar Status"])
+    # ── Tabela editavel ───────────────────────────────────
+    tabela_exibir = dados[["cliente", "nome_do_caso", "nucleo", "responsavel", "prioridade", "status"]].copy()
+    tabela_exibir = tabela_exibir.reset_index(drop=True)
 
-    with tab_tabela:
-        # ── Funcao para gerar badge HTML ─────────────────────
-        def badge_html(texto, cores_mapa):
-            estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
-            return (
-                f'<span style="background:{estilo["bg"]};color:{estilo["cor"]};'
-                f'padding:4px 10px;border-radius:12px;font-size:0.78rem;'
-                f'font-weight:600;white-space:nowrap;">{texto}</span>'
-            )
+    editada = st.data_editor(
+        tabela_exibir,
+        column_config={
+            "cliente": st.column_config.TextColumn("CLIENTE", disabled=True),
+            "nome_do_caso": st.column_config.TextColumn("CASO", disabled=True),
+            "nucleo": st.column_config.TextColumn("NUCLEO", disabled=True),
+            "responsavel": st.column_config.TextColumn("RESPONSAVEL", disabled=True),
+            "prioridade": st.column_config.TextColumn("PRIORIDADE", disabled=True),
+            "status": st.column_config.SelectboxColumn(
+                "STATUS",
+                options=STATUS_OPTIONS,
+                required=True,
+            ),
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="tabela_casos",
+    )
 
-        def celula_preenchida(texto, cores_mapa):
-            estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
-            return (
-                f'<td style="background:{estilo["bg"]};color:{estilo["cor"]};'
-                f'font-weight:600;font-size:0.82rem;text-align:center;">{texto}</td>'
-            )
+    # ── Detectar mudancas de status e salvar no Supabase ──
+    for i in range(len(tabela_exibir)):
+        status_original = tabela_exibir.iloc[i]["status"]
+        status_novo = editada.iloc[i]["status"]
+        if status_novo != status_original:
+            caso_id = int(dados.iloc[i]["id"])
+            salvar_status(caso_id, status_novo)
+            st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = status_novo
+            st.toast(f"Status atualizado: {status_novo}")
+            st.rerun()
 
-        # ── Montar tabela HTML ───────────────────────────────
-        linhas_html = ""
-        for _, row in dados.iterrows():
-            linhas_html += f"""<tr>
-                <td>{row['cliente']}</td>
-                <td style="font-weight:700;">{row['nome_do_caso']}</td>
-                {celula_preenchida(row['nucleo'], CORES_NUCLEO)}
-                <td>{badge_html(row['responsavel'], CORES_RESPONSAVEL)}</td>
-                <td>{badge_html(row['prioridade'], CORES_PRIORIDADE)}</td>
-                <td>{badge_html(row['status'], CORES_STATUS)}</td>
-            </tr>"""
-
-        tabela_html = f"""
-        <div style="max-height:600px;overflow-y:auto;border:1px solid #e0ddd6;border-radius:10px;">
-        <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:0.85rem;">
-            <thead>
-                <tr style="background:{VERDE};position:sticky;top:0;z-index:1;">
-                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prioridade</th>
-                    <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {linhas_html}
-            </tbody>
-        </table>
-        </div>
-        """
-
-        # CSS para linhas da tabela
-        st.markdown("""
-        <style>
-            table tbody tr { border-bottom: 1px solid #eae6df; }
-            table tbody tr:hover { background-color: #faf8f5; }
-            table tbody td { padding: 10px 14px; color: #333; vertical-align: middle; }
-        </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown(tabela_html, unsafe_allow_html=True)
-
-        csv = dados.to_csv(index=False).encode("utf-8")
-        st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
-
-    with tab_status:
-        # Filtrar apenas casos SEM STATUS
-        sem_status = dados[dados["status"] == "SEM STATUS"]
-        com_status = dados[dados["status"] != "SEM STATUS"]
-
-        st.caption(f"{len(sem_status)} caso(s) sem status  ·  {len(com_status)} ja classificado(s)")
-
-        if len(sem_status) == 0:
-            st.success("Todos os casos filtrados ja possuem status!")
-        else:
-            # CSS para botoes de status
-            st.markdown("""
-            <style>
-                .status-row {
-                    display: flex; align-items: center; gap: 8px;
-                    padding: 8px 12px; border-bottom: 1px solid #eae6df;
-                }
-                .status-row:hover { background: #faf8f5; }
-                .caso-nome { flex: 1; font-size: 0.82rem; color: #333; }
-                .caso-info { font-size: 0.68rem; color: #999; margin-top: 1px; }
-            </style>
-            """, unsafe_allow_html=True)
-
-            for _, caso in sem_status.iterrows():
-                c_nome, c_and, c_con, c_sub, c_mon = st.columns([4, 1, 1, 1, 1])
-                with c_nome:
-                    st.markdown(
-                        f"<p style='margin:0;font-weight:700;font-size:0.88rem;color:#222;'>"
-                        f"{caso['nome_do_caso']}</p>"
-                        f"<p style='margin:2px 0 0 0;font-size:0.72rem;color:#888;'>"
-                        f"{caso['nucleo']} · {caso['responsavel']} · {caso['prioridade']}</p>",
-                        unsafe_allow_html=True
-                    )
-                with c_and:
-                    if st.button("Em andamento", key=f"and_{caso['id']}",
-                                 use_container_width=True, type="secondary"):
-                        salvar_status(caso["id"], "EM ANDAMENTO")
-                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "EM ANDAMENTO"
-                        st.rerun()
-                with c_con:
-                    if st.button("Concluido", key=f"con_{caso['id']}",
-                                 use_container_width=True, type="secondary"):
-                        salvar_status(caso["id"], "CONCLUIDO")
-                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "CONCLUIDO"
-                        st.rerun()
-                with c_sub:
-                    if st.button("Substabelecido", key=f"sub_{caso['id']}",
-                                 use_container_width=True, type="secondary"):
-                        salvar_status(caso["id"], "SUBSTABELECIDO")
-                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "SUBSTABELECIDO"
-                        st.rerun()
-                with c_mon:
-                    if st.button("Monitoramento", key=f"mon_{caso['id']}",
-                                 use_container_width=True, type="secondary"):
-                        salvar_status(caso["id"], "EM MONITORAMENTO")
-                        st.session_state.dados.loc[st.session_state.dados["id"] == caso["id"], "status"] = "EM MONITORAMENTO"
-                        st.rerun()
+    csv = dados.to_csv(index=False).encode("utf-8")
+    st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
