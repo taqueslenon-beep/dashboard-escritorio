@@ -552,121 +552,129 @@ elif pagina == "Casos":
 
     st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
-    # ── Detectar mudanca de status via query params ──────
-    import streamlit.components.v1 as components
-
-    params = st.query_params
-    if "update_id" in params and "update_status" in params:
-        caso_id = int(params["update_id"])
-        novo_status = params["update_status"]
-        salvar_status(caso_id, novo_status)
-        st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = novo_status
-        df.loc[df["id"] == caso_id, "status"] = novo_status
-        dados = df[mask] if not busca else df[mask]
-        st.query_params.clear()
-        st.toast(f"Status atualizado: {novo_status}")
-        st.rerun()
-
-    # ── Funcao para gerar badge HTML ─────────────────────
+    # ── Funcoes auxiliares para badges ────────────────────
     def badge_html(texto, cores_mapa):
         estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
         return (
             f'<span style="background:{estilo["bg"]};color:{estilo["cor"]};'
             f'padding:4px 10px;border-radius:12px;font-size:0.78rem;'
-            f'font-weight:600;white-space:nowrap;">{texto}</span>'
+            f'font-weight:600;white-space:nowrap;display:inline-block;">{texto}</span>'
         )
 
-    def celula_preenchida(texto, cores_mapa):
+    def celula_preenchida_html(texto, cores_mapa):
         estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
         return (
-            f'<td style="background:{estilo["bg"]};color:{estilo["cor"]};'
-            f'font-weight:600;font-size:0.82rem;text-align:center;">{texto}</td>'
+            f'<div style="background:{estilo["bg"]};color:{estilo["cor"]};'
+            f'font-weight:600;font-size:0.82rem;text-align:center;'
+            f'padding:8px 4px;border-radius:4px;margin:-8px -4px;">{texto}</div>'
         )
 
-    def select_status_html(caso_id, status_atual):
-        cores_select = {
-            "EM ANDAMENTO": {"bg": "#fef9e7", "cor": "#b7950b"},
-            "CONCLUIDO": {"bg": "#e0edda", "cor": "#2d5a1e"},
-            "SUBSTABELECIDO": {"bg": "#e8f5e9", "cor": "#4caf50"},
-            "EM MONITORAMENTO": {"bg": "#fff3e0", "cor": "#e65100"},
-        }
-        estilo = cores_select.get(status_atual, {"bg": "#f0f0f0", "cor": "#666"})
-        options = ""
-        for opt in STATUS_OPTIONS:
-            sel = ' selected' if opt == status_atual else ''
-            options += f'<option value="{opt}"{sel}>{opt}</option>'
-        return (
-            f'<td style="text-align:center;padding:6px 8px;">'
-            f'<select onchange="updateStatus({caso_id}, this.value)" '
-            f'data-id="{caso_id}" '
-            f'style="background:{estilo["bg"]};color:{estilo["cor"]};'
-            f'font-weight:600;font-size:0.75rem;border:none;border-radius:12px;'
-            f'padding:4px 8px;cursor:pointer;outline:none;'
-            f'-webkit-appearance:none;-moz-appearance:none;appearance:none;'
-            f'text-align:center;min-width:140px;">'
-            f'{options}</select></td>'
-        )
+    # ── Paginacao ──────────────────────────────────────────
+    LINHAS_POR_PAGINA = 25
+    total_paginas = max(1, -(-len(dados) // LINHAS_POR_PAGINA))
 
-    # ── Montar tabela HTML ───────────────────────────────
-    linhas_html = ""
-    for _, row in dados.iterrows():
-        linhas_html += f"""<tr>
-            <td>{row['cliente']}</td>
-            <td style="font-weight:700;">{row['nome_do_caso']}</td>
-            {celula_preenchida(row['nucleo'], CORES_NUCLEO)}
-            <td>{badge_html(row['responsavel'], CORES_RESPONSAVEL)}</td>
-            <td>{badge_html(row['prioridade'], CORES_PRIORIDADE)}</td>
-            {select_status_html(int(row['id']), row['status'])}
-        </tr>"""
+    if "pagina_tabela" not in st.session_state:
+        st.session_state.pagina_tabela = 0
+    if st.session_state.pagina_tabela >= total_paginas:
+        st.session_state.pagina_tabela = 0
 
-    # ── JavaScript para comunicar mudanca ao Streamlit ───
-    js_cores = "{"
-    for k, v in CORES_STATUS.items():
-        js_cores += f'"{k}":{{bg:"{v["bg"]}",cor:"{v["cor"]}"}},'
-    js_cores += '"default":{bg:"#f0f0f0",cor:"#666"}}'
+    pag = st.session_state.pagina_tabela
+    inicio = pag * LINHAS_POR_PAGINA
+    fim = min(inicio + LINHAS_POR_PAGINA, len(dados))
+    pagina_dados = dados.iloc[inicio:fim]
 
-    tabela_html = f"""
-    <div style="max-height:600px;overflow-y:auto;border:1px solid #e0ddd6;border-radius:10px;">
-    <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:0.85rem;">
-        <thead>
-            <tr style="background:{VERDE};position:sticky;top:0;z-index:1;">
-                <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prioridade</th>
-                <th style="padding:12px 14px;text-align:left;border-bottom:none;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {linhas_html}
-        </tbody>
-    </table>
+    # ── Cabecalho da tabela ────────────────────────────────
+    st.markdown(f"""
+    <div style="background:{VERDE};border-radius:10px 10px 0 0;padding:0;">
+        <div style="display:grid;grid-template-columns:2fr 3fr 1.2fr 1.2fr 0.8fr 1.5fr;gap:0;">
+            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Cliente</div>
+            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Caso</div>
+            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Nucleo</div>
+            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Responsavel</div>
+            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Prior.</div>
+            <div style="padding:12px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Status</div>
+        </div>
     </div>
-    <script>
-        var coresStatus = {js_cores};
-        function updateStatus(id, novoStatus) {{
-            var sel = document.querySelector('select[data-id="' + id + '"]');
-            var cor = coresStatus[novoStatus] || coresStatus["default"];
-            sel.style.background = cor.bg;
-            sel.style.color = cor.cor;
-            var url = new URL(window.parent.location);
-            url.searchParams.set('update_id', id);
-            url.searchParams.set('update_status', novoStatus);
-            window.parent.location.href = url.toString();
-        }}
-    </script>
-    <style>
-        table tbody tr {{ border-bottom: 1px solid #eae6df; }}
-        table tbody tr:hover {{ background-color: #faf8f5; }}
-        table tbody td {{ padding: 10px 14px; color: #333; vertical-align: middle; }}
-        select:hover {{ opacity: 0.85; }}
-    </style>
-    """
+    """, unsafe_allow_html=True)
 
-    num_linhas = len(dados)
-    altura_tabela = min(600, 50 + num_linhas * 45)
-    components.html(tabela_html, height=altura_tabela, scrolling=True)
+    # ── CSS para esconder label dos selectbox de status ────
+    st.markdown("""
+    <style>
+        .status-select label { display: none !important; }
+        .status-select .stSelectbox > div > div {
+            min-height: 30px !important;
+            padding: 0 8px !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            border-radius: 12px !important;
+            border: none !important;
+        }
+        .status-select [data-baseweb="select"] > div {
+            border: none !important;
+            background: transparent !important;
+        }
+        .linha-caso {
+            border-bottom: 1px solid #eae6df;
+            padding: 4px 0;
+            min-height: 48px;
+            align-items: center;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── Linhas da tabela ───────────────────────────────────
+    for _, row in pagina_dados.iterrows():
+        caso_id = int(row["id"])
+        cols = st.columns([2, 3, 1.2, 1.2, 0.8, 1.5])
+
+        with cols[0]:
+            st.markdown(f'<div style="padding:8px 6px;font-size:0.85rem;color:#333;">{row["cliente"]}</div>', unsafe_allow_html=True)
+        with cols[1]:
+            st.markdown(f'<div style="padding:8px 6px;font-size:0.85rem;color:#333;font-weight:700;">{row["nome_do_caso"]}</div>', unsafe_allow_html=True)
+        with cols[2]:
+            st.markdown(celula_preenchida_html(row["nucleo"], CORES_NUCLEO), unsafe_allow_html=True)
+        with cols[3]:
+            st.markdown(badge_html(row["responsavel"], CORES_RESPONSAVEL), unsafe_allow_html=True)
+        with cols[4]:
+            st.markdown(badge_html(row["prioridade"], CORES_PRIORIDADE), unsafe_allow_html=True)
+        with cols[5]:
+            status_atual = row["status"]
+            idx_status = STATUS_OPTIONS.index(status_atual) if status_atual in STATUS_OPTIONS else 0
+            with st.container():
+                st.markdown('<div class="status-select">', unsafe_allow_html=True)
+                novo = st.selectbox(
+                    f"status_{caso_id}",
+                    STATUS_OPTIONS,
+                    index=idx_status,
+                    key=f"sel_status_{caso_id}",
+                    label_visibility="collapsed",
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+                if novo != status_atual:
+                    salvar_status(caso_id, novo)
+                    st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = novo
+                    st.toast(f"Status atualizado: {novo}")
+                    st.rerun()
+
+        st.markdown('<hr style="margin:0;border:none;border-top:1px solid #eae6df;">', unsafe_allow_html=True)
+
+    # ── Navegacao entre paginas ────────────────────────────
+    if total_paginas > 1:
+        nav1, nav2, nav3 = st.columns([1, 2, 1])
+        with nav1:
+            if st.button("< Anterior", disabled=(pag == 0), use_container_width=True):
+                st.session_state.pagina_tabela -= 1
+                st.rerun()
+        with nav2:
+            st.markdown(
+                f'<p style="text-align:center;color:#777;font-size:0.85rem;padding-top:6px;">'
+                f'Pagina {pag + 1} de {total_paginas} ({len(dados)} casos)</p>',
+                unsafe_allow_html=True
+            )
+        with nav3:
+            if st.button("Proximo >", disabled=(pag >= total_paginas - 1), use_container_width=True):
+                st.session_state.pagina_tabela += 1
+                st.rerun()
 
     csv = dados.to_csv(index=False).encode("utf-8")
     st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
