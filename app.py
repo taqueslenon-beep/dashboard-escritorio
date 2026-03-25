@@ -552,152 +552,97 @@ elif pagina == "Casos":
 
     st.caption(f"{len(dados)} de {len(df)} casos filtrados")
 
-    # ── Funcoes auxiliares para badges ────────────────────
-    def badge_html(texto, cores_mapa):
-        estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
-        return (
-            f'<span style="background:{estilo["bg"]};color:{estilo["cor"]};'
-            f'padding:4px 10px;border-radius:12px;font-size:0.78rem;'
-            f'font-weight:600;white-space:nowrap;display:inline-block;">{texto}</span>'
-        )
+    # ── Controles: cliente + editar status ─────────────────
+    ctrl1, ctrl2 = st.columns([1, 3])
+    with ctrl1:
+        mostrar_cliente = st.checkbox("Mostrar coluna Cliente", value=False)
+    with ctrl2:
+        with st.expander("✏️ Editar status de um caso"):
+            opcoes_casos = {
+                f"{row['nome_do_caso']} ({row['status']})": int(row["id"])
+                for _, row in dados.iterrows()
+            }
+            caso_selecionado = st.selectbox("Caso", list(opcoes_casos.keys()), key="edit_caso")
+            if caso_selecionado:
+                caso_id_edit = opcoes_casos[caso_selecionado]
+                status_atual_edit = dados.loc[dados["id"] == caso_id_edit, "status"].values[0]
+                idx_edit = STATUS_OPTIONS.index(status_atual_edit) if status_atual_edit in STATUS_OPTIONS else 0
+                novo_status_edit = st.selectbox("Novo status", STATUS_OPTIONS, index=idx_edit, key="edit_status")
+                if st.button("Salvar", key="btn_salvar_status"):
+                    salvar_status(caso_id_edit, novo_status_edit)
+                    st.session_state.dados.loc[st.session_state.dados["id"] == caso_id_edit, "status"] = novo_status_edit
+                    st.toast(f"Status atualizado: {novo_status_edit}")
+                    st.rerun()
 
-    def celula_preenchida_html(texto, cores_mapa):
-        estilo = cores_mapa.get(texto, {"bg": "#f0f0f0", "cor": "#666"})
-        return (
-            f'<div style="background:{estilo["bg"]};color:{estilo["cor"]};'
-            f'font-weight:600;font-size:0.82rem;text-align:center;'
-            f'padding:8px 4px;border-radius:4px;margin:-8px -4px;">{texto}</div>'
-        )
+    # ── Funcoes de estilo (pandas Styler) ──────────────────
+    def estilo_celula(val, mapa):
+        c = mapa.get(str(val), {"bg": "#f0f0f0", "cor": "#666"})
+        return f'background-color: {c["bg"]}; color: {c["cor"]}; font-weight: 600; text-align: center;'
 
-    # ── Paginacao ──────────────────────────────────────────
-    LINHAS_POR_PAGINA = 25
-    total_paginas = max(1, -(-len(dados) // LINHAS_POR_PAGINA))
+    def estilo_caso(val):
+        return "font-weight: 700; color: #1a1a1a;"
 
-    if "pagina_tabela" not in st.session_state:
-        st.session_state.pagina_tabela = 0
-    if st.session_state.pagina_tabela >= total_paginas:
-        st.session_state.pagina_tabela = 0
+    def estilo_cliente(val):
+        return "color: #555; font-size: 0.82em;"
 
-    pag = st.session_state.pagina_tabela
-    inicio = pag * LINHAS_POR_PAGINA
-    fim = min(inicio + LINHAS_POR_PAGINA, len(dados))
-    pagina_dados = dados.iloc[inicio:fim]
-
-    # ── Toggle coluna cliente ──────────────────────────────
-    mostrar_cliente = st.checkbox("Mostrar coluna Cliente", value=False)
-
-    # ── CSS compacto para linhas da tabela ─────────────────
-    st.markdown("""
-    <style>
-        /* Compactar linhas da tabela de casos */
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-            gap: 6px !important;
-            margin-bottom: 0 !important;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-            min-height: 36px !important;
-            align-items: center !important;
-        }
-        /* Remover espaco extra dos elementos dentro das colunas */
-        .tabela-casos div[data-testid="stMarkdownContainer"] p,
-        .tabela-casos div[data-testid="stMarkdownContainer"] div {
-            margin-bottom: 0 !important;
-            line-height: 1.2 !important;
-        }
-        /* Selectbox compacto dentro da tabela */
-        .tabela-casos .stSelectbox {
-            margin-bottom: 0 !important;
-        }
-        .tabela-casos .stSelectbox > div > div {
-            min-height: 28px !important;
-            padding: 0 8px !important;
-            font-size: 0.78rem !important;
-            font-weight: 600 !important;
-        }
-        .tabela-casos .stSelectbox label {
-            display: none !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ── Cabecalho da tabela ────────────────────────────────
+    # ── Montar DataFrame para exibicao ─────────────────────
+    colunas = ["nome_do_caso", "nucleo", "responsavel", "prioridade", "status"]
+    renomear = {
+        "nome_do_caso": "CASO", "nucleo": "NÚCLEO",
+        "responsavel": "RESPONSÁVEL", "prioridade": "PRIORIDADE", "status": "STATUS",
+    }
     if mostrar_cliente:
-        grid_cols = "2fr 3fr 1.2fr 1.2fr 0.8fr 1.5fr"
-        cabecalhos = ["Cliente", "Caso", "Nucleo", "Responsavel", "Prior.", "Status"]
-        col_ratios = [2, 3, 1.2, 1.2, 0.8, 1.5]
-    else:
-        grid_cols = "3fr 1.2fr 1.2fr 0.8fr 1.5fr"
-        cabecalhos = ["Caso", "Nucleo", "Responsavel", "Prior.", "Status"]
-        col_ratios = [3, 1.2, 1.2, 0.8, 1.5]
+        colunas = ["cliente"] + colunas
+        renomear["cliente"] = "CLIENTE"
 
-    cabecalho_divs = "".join(
-        f'<div style="padding:10px 14px;color:white;font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">{c}</div>'
-        for c in cabecalhos
+    df_exibir = dados[colunas].rename(columns=renomear).reset_index(drop=True)
+
+    # ── Aplicar estilos ────────────────────────────────────
+    styler = df_exibir.style
+
+    styler = styler.map(estilo_caso, subset=["CASO"])
+    styler = styler.map(lambda v: estilo_celula(v, CORES_NUCLEO), subset=["NÚCLEO"])
+    styler = styler.map(lambda v: estilo_celula(v, CORES_RESPONSAVEL), subset=["RESPONSÁVEL"])
+    styler = styler.map(lambda v: estilo_celula(v, CORES_PRIORIDADE), subset=["PRIORIDADE"])
+    styler = styler.map(lambda v: estilo_celula(v, CORES_STATUS), subset=["STATUS"])
+    if mostrar_cliente:
+        styler = styler.map(estilo_cliente, subset=["CLIENTE"])
+
+    styler = styler.set_table_styles([
+        # Tabela geral
+        {"selector": "table", "props": [
+            ("width", "100%"), ("border-collapse", "collapse"),
+            ("font-family", "'Inter', sans-serif"), ("font-size", "0.84rem"),
+            ("border", "1px solid #e0ddd6"), ("border-radius", "10px"),
+        ]},
+        # Cabecalho
+        {"selector": "thead th", "props": [
+            ("background-color", VERDE), ("color", "white"),
+            ("font-weight", "600"), ("font-size", "0.73rem"),
+            ("text-transform", "uppercase"), ("letter-spacing", "0.5px"),
+            ("padding", "11px 14px"), ("text-align", "left"),
+            ("border-bottom", "none"), ("white-space", "nowrap"),
+        ]},
+        # Primeira celula do cabecalho: cantos arredondados
+        {"selector": "thead th:first-child", "props": [("border-radius", "10px 0 0 0")]},
+        {"selector": "thead th:last-child",  "props": [("border-radius", "0 10px 0 0")]},
+        # Celulas do corpo
+        {"selector": "tbody td", "props": [
+            ("padding", "8px 14px"), ("border-bottom", "1px solid #eae6df"),
+            ("vertical-align", "middle"),
+        ]},
+        # Hover
+        {"selector": "tbody tr:hover td", "props": [("background-color", "#faf8f5 !important")]},
+    ]).hide(axis="index")
+
+    # ── Renderizar tabela ──────────────────────────────────
+    html_tabela = styler.to_html()
+    st.markdown(
+        f'<div style="overflow-x:auto;border-radius:10px;">{html_tabela}</div>',
+        unsafe_allow_html=True,
     )
-    st.markdown(f"""
-    <div style="background:{VERDE};border-radius:10px 10px 0 0;">
-        <div style="display:grid;grid-template-columns:{grid_cols};gap:0;">
-            {cabecalho_divs}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
-    # ── Linhas da tabela ───────────────────────────────────
-    st.markdown('<div class="tabela-casos">', unsafe_allow_html=True)
-    for _, row in pagina_dados.iterrows():
-        caso_id = int(row["id"])
-        cols = st.columns(col_ratios)
-        idx_col = 0
-
-        if mostrar_cliente:
-            with cols[idx_col]:
-                st.markdown(f'<div style="font-size:0.82rem;color:#555;padding:4px 2px;">{row["cliente"]}</div>', unsafe_allow_html=True)
-            idx_col += 1
-
-        with cols[idx_col]:
-            st.markdown(f'<div style="font-size:0.83rem;color:#222;font-weight:700;padding:4px 2px;">{row["nome_do_caso"]}</div>', unsafe_allow_html=True)
-        with cols[idx_col + 1]:
-            st.markdown(celula_preenchida_html(row["nucleo"], CORES_NUCLEO), unsafe_allow_html=True)
-        with cols[idx_col + 2]:
-            st.markdown(badge_html(row["responsavel"], CORES_RESPONSAVEL), unsafe_allow_html=True)
-        with cols[idx_col + 3]:
-            st.markdown(badge_html(row["prioridade"], CORES_PRIORIDADE), unsafe_allow_html=True)
-        with cols[idx_col + 4]:
-            status_atual = row["status"]
-            idx_status = STATUS_OPTIONS.index(status_atual) if status_atual in STATUS_OPTIONS else 0
-            novo = st.selectbox(
-                f"s_{caso_id}",
-                STATUS_OPTIONS,
-                index=idx_status,
-                key=f"sel_{caso_id}",
-                label_visibility="collapsed",
-            )
-            if novo != status_atual:
-                salvar_status(caso_id, novo)
-                st.session_state.dados.loc[st.session_state.dados["id"] == caso_id, "status"] = novo
-                st.toast(f"Status atualizado: {novo}")
-                st.rerun()
-
-        st.markdown('<hr style="margin:0;border:none;border-top:1px solid #eae6df;">', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # ── Navegacao entre paginas ────────────────────────────
-    if total_paginas > 1:
-        nav1, nav2, nav3 = st.columns([1, 2, 1])
-        with nav1:
-            if st.button("< Anterior", disabled=(pag == 0), use_container_width=True):
-                st.session_state.pagina_tabela -= 1
-                st.rerun()
-        with nav2:
-            st.markdown(
-                f'<p style="text-align:center;color:#777;font-size:0.85rem;padding-top:6px;">'
-                f'Pagina {pag + 1} de {total_paginas} ({len(dados)} casos)</p>',
-                unsafe_allow_html=True
-            )
-        with nav3:
-            if st.button("Proximo >", disabled=(pag >= total_paginas - 1), use_container_width=True):
-                st.session_state.pagina_tabela += 1
-                st.rerun()
-
+    # ── Rodape: exportar CSV ───────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
     csv = dados.to_csv(index=False).encode("utf-8")
     st.download_button("\u2b07 Exportar CSV", csv, "casos.csv", "text/csv")
