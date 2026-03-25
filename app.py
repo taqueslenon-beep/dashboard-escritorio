@@ -122,6 +122,58 @@ st.markdown(f"""
     /* Selectbox */
     .stSelectbox > div > div {{ font-size: 0.85rem; }}
 
+    /* Filtros na area principal — expander */
+    .main .stExpander {{
+        background: white;
+        border: 1px solid #e0ddd6;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }}
+    .main .stExpander summary {{
+        color: {VERDE} !important;
+        font-weight: 600;
+    }}
+    .main .stExpander summary svg {{
+        fill: {VERDE} !important;
+    }}
+
+    /* Filtros — labels */
+    .main .stExpander label {{
+        color: #64748b !important;
+        font-size: 0.78rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600 !important;
+    }}
+
+    /* Filtros — multiselect na area principal */
+    .main .stMultiSelect > div > div {{
+        background: white !important;
+        border: 1px solid #d4d0c8 !important;
+        border-radius: 8px !important;
+        color: #333 !important;
+    }}
+    .main .stMultiSelect span[data-baseweb="tag"] {{
+        background: {VERDE} !important;
+        color: white !important;
+        border-radius: 6px !important;
+        font-size: 0.75rem !important;
+    }}
+    .main .stMultiSelect span[data-baseweb="tag"] svg {{
+        fill: rgba(255,255,255,0.7) !important;
+    }}
+    .main .stMultiSelect svg {{
+        fill: #999 !important;
+    }}
+
+    /* Filtros — text input na area principal */
+    .main .stTextInput input {{
+        background: white !important;
+        border: 1px solid #d4d0c8 !important;
+        border-radius: 8px !important;
+        color: #333 !important;
+    }}
+
     /* Divider */
     hr {{ border: none; border-top: 1px solid #ddd8cf; margin: 1.2rem 0; }}
 
